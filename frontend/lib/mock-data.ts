@@ -47,7 +47,7 @@ export const initialPeople: Person[] = [
     id: "P-004",
     name: "赵总监",
     role: "安全总监",
-    phone: "17743561681",
+    phone: "13800000004",
     gender: "男",
     idCard: "500***********444",
     company: "项目安全管理部",
