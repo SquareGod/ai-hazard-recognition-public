@@ -1,0 +1,35 @@
+{
+  "name": "ai-hazard-recognition-public",
+  "version": "1.0.0",
+  "private": false,
+  "scripts": {
+    "dev": "vinext dev",
+    "build": "vinext build",
+    "start": "vinext start",
+    "lint": "node ./node_modules/typescript/bin/tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "hls.js": "^1.7.2",
+    "lucide-react": "latest",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "vinext": "latest",
+    "vite": "latest",
+    "wrangler": "latest"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "jsdom": "^29.1.1",
+    "typescript": "latest",
+    "vitest": "^4.1.11"
+  },
+  "type": "module"
+}

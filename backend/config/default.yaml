@@ -1,0 +1,67 @@
+server:
+  host: 127.0.0.1
+  port: 8010
+
+catalog:
+  excel_path: config/hazard_catalog.xlsx
+  sheet: 逐项设计
+  first_data_row: 3
+  label_count: 65
+
+storage:
+  data_dir: data
+  log_dir: logs
+  max_upload_mb: 500
+
+detector:
+  # Public defaults intentionally avoid downloading or loading model weights.
+  # Set DETECTOR_PROVIDER=yolo and DETECTOR_MODEL_PATH in .env to use local weights.
+  provider: mock
+  model_path: models/yolov8s-worldv2.pt
+  device: auto
+  realtime_imgsz: 960
+  inspection_imgsz: 1280
+  confidence: 0.18
+  iou: 0.50
+
+sampling:
+  default_video_fps: 1.0
+  realtime_fps: 4.0
+  max_frames: 12
+  camera_duration_sec: 10
+  blur_threshold: 35.0
+  min_brightness: 18.0
+  max_brightness: 242.0
+  duplicate_hamming_threshold: 5
+  inspection_interval_sec: 300
+  test_stream_interval_sec: 3
+
+vlm:
+  # Set VLM_PROVIDER=qwen and DASHSCOPE_API_KEY in local .env to enable Qwen.
+  provider: mock
+  model: qwen3-vl-plus
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+  temperature: 0.1
+  timeout_sec: 180
+  max_images_per_call: 4
+  full_scan_every_n_frames: 5
+
+harness:
+  # direct: trust clear visual findings; strict: retain conservative acceptance checks.
+  decision_mode: direct
+  video_confirm_frames: 2
+  allow_single_image_confirmation: true
+  downgrade_external_evidence_labels: true
+  max_labels_per_call: 15
+
+streams:
+  event_cooldown_sec: 60
+  snapshot_quality: 95
+  order_cooldown_sec: 600
+
+stream_gateway:
+  control_url: http://127.0.0.1:9997
+  rtsp_base: rtsp://127.0.0.1:8554
+  webrtc_base: http://127.0.0.1:8889
+  hls_base: http://127.0.0.1:8888
+

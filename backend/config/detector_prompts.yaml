@@ -1,0 +1,192 @@
+# YOLO-World 零样本候选词。中文是系统内部显示名，prompt使用英文以提高开放词汇模型兼容性。
+classes:
+  - id: person
+    prompt: construction worker person
+    name: 人员
+    routes: [人员防护, 有限空间]
+    realtime: true
+  - id: head
+    prompt: human head
+    name: 头部
+    routes: [人员防护]
+    realtime: true
+  - id: helmet
+    prompt: safety helmet hard hat
+    name: 安全帽
+    routes: [人员防护]
+    realtime: true
+  - id: reflective_vest
+    prompt: reflective safety vest
+    name: 反光衣
+    routes: [人员防护]
+    realtime: true
+  - id: safety_harness
+    prompt: safety harness
+    name: 安全带
+    routes: [人员防护, 有限空间]
+    realtime: true
+  - id: material_stack
+    prompt: construction material pile
+    name: 材料堆
+    routes: [集中堆载, 脚手架工程, 临时用电]
+  - id: scattered_material
+    prompt: scattered construction material
+    name: 散落材料
+    routes: [集中堆载, 消防安全]
+  - id: scaffold_facade
+    prompt: construction scaffold
+    name: 脚手架
+    routes: [脚手架工程, 临边防护]
+  - id: scaffold_board
+    prompt: scaffold plank
+    name: 脚手板
+    routes: [脚手架工程]
+  - id: safety_net
+    prompt: green construction safety net
+    name: 密目式安全网
+    routes: [脚手架工程, 临边防护]
+  - id: scaffold_brace
+    prompt: scaffold diagonal brace
+    name: 脚手架剪刀撑
+    routes: [脚手架工程]
+  - id: wall_tie
+    prompt: scaffold wall tie connector
+    name: 连墙件
+    routes: [脚手架工程]
+  - id: scaffold_base_plate
+    prompt: scaffold base plate
+    name: 脚手架底座
+    routes: [脚手架工程]
+  - id: floor_opening
+    prompt: floor opening hole at construction site
+    name: 楼板洞口
+    routes: [临边防护, 有限空间]
+  - id: open_edge
+    prompt: unprotected open edge at construction site
+    name: 临边
+    routes: [临边防护, 人员防护]
+  - id: guardrail
+    prompt: construction safety guardrail
+    name: 防护栏杆
+    routes: [临边防护]
+  - id: toe_board
+    prompt: scaffold toe board
+    name: 挡脚板
+    routes: [临边防护]
+  - id: opening_cover
+    prompt: floor opening cover plate
+    name: 洞口盖板
+    routes: [临边防护]
+  - id: elevator_gate
+    prompt: elevator shaft safety gate
+    name: 电梯井防护门
+    routes: [临边防护]
+  - id: distribution_box
+    prompt: electrical distribution box at construction site
+    name: 配电箱
+    routes: [临时用电]
+  - id: switch_box
+    prompt: electrical switch box
+    name: 开关箱
+    routes: [临时用电]
+  - id: cable
+    prompt: electrical cable on construction site
+    name: 电缆
+    routes: [临时用电]
+  - id: power_strip
+    prompt: power strip extension socket
+    name: 拖线板
+    routes: [临时用电]
+  - id: standing_water
+    prompt: standing water puddle
+    name: 积水
+    routes: [脚手架工程, 临时用电, 起重机械, 防台防汛]
+  - id: formwork_support_system
+    prompt: formwork shoring support system
+    name: 模板支撑体系
+    routes: [模板工程]
+  - id: formwork_prop
+    prompt: formwork support prop
+    name: 模板支撑立杆
+    routes: [模板工程]
+  - id: support_brace
+    prompt: formwork horizontal diagonal brace
+    name: 模板支撑杆件
+    routes: [模板工程]
+  - id: top_jack
+    prompt: adjustable shoring top jack
+    name: 可调顶托
+    routes: [模板工程]
+  - id: lifting_hook
+    prompt: crane lifting hook
+    name: 起重吊钩
+    routes: [起重机械]
+  - id: hook_safety_latch
+    prompt: crane hook safety latch
+    name: 吊钩保险片
+    routes: [起重机械]
+  - id: wire_rope
+    prompt: crane steel wire rope
+    name: 起重钢丝绳
+    routes: [起重机械]
+  - id: lifting_load
+    prompt: suspended lifting load
+    name: 吊物
+    routes: [起重机械]
+  - id: lifting_bucket
+    prompt: crane lifting bucket
+    name: 吊斗
+    routes: [起重机械]
+  - id: machine_guard
+    prompt: machine safety guard cover
+    name: 机械防护罩
+    routes: [施工机具]
+  - id: fire_extinguisher
+    prompt: fire extinguisher
+    name: 灭火器
+    routes: [消防安全]
+  - id: hydrant_box
+    prompt: fire hydrant cabinet
+    name: 消火栓箱
+    routes: [消防安全]
+  - id: welding_arc
+    prompt: welding operation sparks
+    name: 焊接动火点
+    routes: [人员防护, 消防安全]
+  - id: fire_pan
+    prompt: welding fire catch pan
+    name: 接火斗
+    routes: [消防安全]
+  - id: warning_barrier
+    prompt: construction warning barrier tape
+    name: 警戒围挡
+    routes: [模板工程, 有限空间]
+  - id: warning_sign
+    prompt: construction safety warning sign
+    name: 警示标识
+    routes: [有限空间, 交通安全]
+  - id: combustible_waste
+    prompt: combustible construction waste wood chips
+    name: 可燃垃圾
+    routes: [消防安全]
+  - id: vehicle
+    prompt: construction site vehicle
+    name: 场内车辆
+    routes: [交通安全]
+  - id: traffic_mirror
+    prompt: convex traffic safety mirror
+    name: 道路反光镜
+    routes: [交通安全]
+  - id: drain
+    prompt: drainage ditch catch pit
+    name: 排水沟集水井
+    routes: [防台防汛]
+  - id: slope_surface
+    prompt: construction slope excavation slope
+    name: 边坡
+    routes: [防台防汛]
+  - id: slope_crack
+    prompt: crack on soil slope
+    name: 边坡裂缝
+    routes: [防台防汛]
+

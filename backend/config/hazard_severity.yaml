@@ -1,0 +1,17 @@
+# 隐患等级解析配置。
+# 当前试运行阶段 labels 保持为空，系统采用视觉大模型给出的 provisional severity。
+# 正式标准确定后，只需在 labels 中增加 label_id 对应等级，不需要修改接口或前端。
+version: model-provisional-v1
+
+deadlines:
+  general: 3天内
+  major: 24小时内
+
+labels: {}
+
+# 正式规则示例（当前不要启用）：
+# labels:
+#   H015:
+#     severity: major
+#     reason: 正式隐患分级清单规定
+

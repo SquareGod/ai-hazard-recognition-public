@@ -1,0 +1,74 @@
+services:
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MEDIAMTX_CONTROL_URL: http://mediamtx:9997
+      MEDIAMTX_RTSP_BASE: rtsp://mediamtx:8554
+    volumes:
+      - backend_data:/app/data
+      - backend_logs:/app/logs
+      - ./models:/app/models
+    ports:
+      - "127.0.0.1:8010:8010"
+    depends_on:
+      mediamtx:
+        condition: service_healthy
+    networks: [hazard_net]
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_PROXY_TARGET: http://backend:8010
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks: [hazard_net]
+
+  mediamtx:
+    build:
+      context: ./deploy/mediamtx
+      dockerfile: Dockerfile
+      args:
+        MEDIAMTX_IMAGE: bluenviron/mediamtx@sha256:1b029d11049be75630e9b73bb0d5f47b08a7db4eaee89a80bf8f53bc40e56414
+        BUSYBOX_IMAGE: busybox:1.37.0-uclibc@sha256:8d7b1636e974e0adfd8d945955fca609304f0a56c18799dfd032d6e661382d84
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MTX_WEBRTCADDITIONALHOSTS: ${MEDIAMTX_WEBRTC_ADDITIONAL_HOSTS}
+      MTX_AUTHINTERNALUSERS_0_USER: ${MEDIAMTX_API_USER}
+      MTX_AUTHINTERNALUSERS_0_PASS: ${MEDIAMTX_API_PASSWORD}
+      MTX_AUTHINTERNALUSERS_1_USER: ${MEDIAMTX_READ_USER}
+      MTX_AUTHINTERNALUSERS_1_PASS: ${MEDIAMTX_READ_PASSWORD}
+      MTX_AUTHINTERNALUSERS_2_USER: ${MEDIAMTX_PLAYBACK_USER}
+      MTX_AUTHINTERNALUSERS_2_PASS: ${MEDIAMTX_PLAYBACK_PASSWORD}
+      MTX_AUTHINTERNALUSERS_3_USER: ${MEDIAMTX_PUBLISH_USER}
+      MTX_AUTHINTERNALUSERS_3_PASS: ${MEDIAMTX_PUBLISH_PASSWORD}
+    volumes:
+      - ./deploy/mediamtx/mediamtx.yml:/mediamtx.yml:ro
+    ports:
+      - "127.0.0.1:8554:8554"
+      - "127.0.0.1:8888:8888"
+      - "127.0.0.1:8889:8889"
+      - "127.0.0.1:8189:8189/udp"
+      - "127.0.0.1:9997:9997"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          token="$$(printf '%s' "$${MEDIAMTX_API_USER}:$${MEDIAMTX_API_PASSWORD}" | /bin/busybox base64 | /bin/busybox tr -d '\n')";
+          /bin/busybox wget -q -O /dev/null --header "Authorization: Basic $$token" http://127.0.0.1:9997/v3/paths/list
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [hazard_net]
+
+networks:
+  hazard_net:
+
+volumes:
+  backend_data:
+  backend_logs:

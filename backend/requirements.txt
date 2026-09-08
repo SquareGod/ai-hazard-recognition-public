@@ -1,0 +1,14 @@
+fastapi>=0.115,<1.0
+httpx>=0.27,<1.0
+uvicorn[standard]>=0.30,<1.0
+python-multipart>=0.0.9
+python-dotenv>=1.0
+PyYAML>=6.0
+openpyxl>=3.1
+opencv-python>=4.9
+numpy>=1.26
+pydantic>=2.7
+openai>=1.30
+ultralytics>=8.3
+argon2-cffi>=23.1,<26.0
+
