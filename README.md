@@ -21,8 +21,8 @@ enable a fine-tuned model, email, an external visual model or a camera.
 
 ## Documentation
 
-- [Architecture and model integration](docs/MODEL_INTEGRATION_AND_ARCHITECTURE.md)
-- [Server and private handoff guide](docs/DEPLOYMENT_AND_PRIVATE_HANDOFF.md)
+- [Deployment guide](docs/DEPLOYMENT.md)
+- [Model integration guide](docs/MODEL-INTEGRATION.md)
 - [Demonstration assets](demo/README.md)
 - [Local model directory](models/README.md)
 - [Security policy](SECURITY.md)

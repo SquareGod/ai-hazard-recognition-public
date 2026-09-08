@@ -12,5 +12,5 @@ models/
 
 Set `DETECTOR_PROVIDER=yolo` and
 `DETECTOR_MODEL_PATH=/app/models/your-safety-model.pt` in `.env` when using Docker.
-See `docs/MODEL_INTEGRATION_AND_ARCHITECTURE.md` for required labels, versioning,
+See `docs/MODEL-INTEGRATION.md` for required labels, versioning,
 checksums and the external model-service contract.
