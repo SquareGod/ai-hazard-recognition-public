@@ -145,7 +145,7 @@ def load_settings() -> Settings:
         video_confirm_frames=int(_deep_get(raw, "harness.video_confirm_frames", 2)),
         allow_single_image_confirmation=bool(_deep_get(raw, "harness.allow_single_image_confirmation", True)),
         downgrade_external_evidence_labels=bool(_deep_get(raw, "harness.downgrade_external_evidence_labels", True)),
-        max_labels_per_call=int(_deep_get(raw, "harness.max_labels_per_call", 15)),
+        max_labels_per_call=int(os.getenv("HARNESS_MAX_LABELS_PER_CALL", str(_deep_get(raw, "harness.max_labels_per_call", 15)))),
         decision_mode=os.getenv(
             "HAZARD_DECISION_MODE", str(_deep_get(raw, "harness.decision_mode", "direct"))
         ).strip().lower(),

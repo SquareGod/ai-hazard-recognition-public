@@ -3,6 +3,8 @@ from __future__ import annotations
 import base64
 import json
 import os
+
+import numpy as np
 from abc import ABC, abstractmethod
 from pathlib import Path
 
@@ -51,8 +53,25 @@ class QwenVLMProvider(VLMProvider):
 
     @staticmethod
     def _data_url(path: Path) -> str:
-        encoded = base64.b64encode(path.read_bytes()).decode("ascii")
-        return f"data:{mime_type(path)};base64,{encoded}"
+        """大图先降采样再上传：原图base64后可达数MB，是VLM单次调用延迟的主因之一。"""
+        max_px = int(os.getenv("VLM_MAX_IMAGE_PX", "1280"))
+        data, mime = path.read_bytes(), mime_type(path)
+        if max_px > 0 and path.suffix.lower() in {".jpg", ".jpeg", ".png", ".bmp", ".webp"}:
+            try:
+                import cv2
+                image = cv2.imdecode(np.frombuffer(data, dtype=np.uint8), cv2.IMREAD_COLOR)
+                if image is not None:
+                    height, width = image.shape[:2]
+                    if max(width, height) > max_px:
+                        scale = max(width, height) / max_px
+                        image = cv2.resize(image, (round(width / scale), round(height / scale)), interpolation=cv2.INTER_AREA)
+                        ok, buffer = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, 85])
+                        if ok:
+                            data, mime = buffer.tobytes(), "image/jpeg"
+            except Exception as exc:
+                logger.warning("VLM图片降采样失败，改用原图：%s", exc)
+        encoded = base64.b64encode(data).decode("ascii")
+        return f"data:{mime};base64,{encoded}"
 
     @staticmethod
     def _label_text(labels: list[HazardLabel]) -> str:

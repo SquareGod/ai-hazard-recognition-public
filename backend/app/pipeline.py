@@ -146,7 +146,7 @@ class HazardPipeline:
             if self.vlm is None:
                 self.vlm = create_vlm_provider()
             batch_size = max(1, settings.vlm_max_images_per_call)
-            parallelism = max(1, int(os.getenv("VLM_PARALLELISM", "2")))
+            parallelism = max(1, int(os.getenv("VLM_PARALLELISM", "4")))
             planned_groups = (
                 [load_catalog() for _ in range(0, len(frames), batch_size)]
                 if whole_adapter else [

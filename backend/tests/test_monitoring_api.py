@@ -100,7 +100,7 @@ def test_camera_directory_excludes_disabled_sources_and_lists_enabled_work_areas
 
     assert [item["id"] for item in directory["items"]] == ["cam-a1", "cam-a2"]
     assert directory["total"] == 2
-    assert directory["work_areas"] == sorted({"示范工区", "A2工区"})
+    assert directory["work_areas"] == ["示范工区", "A2工区"]
 
 
 def test_ticket_timer_releases_expired_monitor_lease_without_a_followup_request(monkeypatch) -> None:

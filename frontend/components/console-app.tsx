@@ -706,7 +706,7 @@ function LivePage({ projectId, hazards, people, setHazards, openHazard, flash, n
   function formatJobProgress(state: import("@/lib/api").JobState) {
     const progress = state.progress;
     if (!progress) return state.status === "queued" ? "任务已排队，等待算法资源…" : "正在执行检测与核验…";
-    const stageNames: Record<string, string> = { queued: "排队", extracting: "提取画面", detecting: "目标检测", verifying: "视觉核验", persisting: "建立台账" };
+    const stageNames: Record<string, string> = { queued: "排队", extracting: "提取画面", detecting: "目标检测", verifying: "视觉核验", vlm: "视觉核验", persisting: "建立台账" };
     const stage = stageNames[progress.stage] || progress.stage || "处理中";
     const total = Math.max(progress.total || 0, 0);
     const count = total ? `${Math.min(progress.completed, total)}/${total}` : `${progress.completed} 项`;
