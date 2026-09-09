@@ -459,12 +459,13 @@ body { font-size: 16px; }
 /* 主画面：深色监控屏，视频绝对定位铺满舞台 + contain 等比完整显示，机制上保证永不溢出，
    卡片高度受控 = 监控墙高度，底部与右侧预览栏对齐。 */
 .monitor-primary-card .managed-video-stage { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; background: linear-gradient(170deg, #16283f 0%, #0d1a2c 100%); }
-.monitor-primary-card .managed-video-stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.monitor-primary-card .managed-video-stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .monitor-primary-card .stream-player-card > header { background: #eef4fb; border-bottom: 1px solid var(--line); }
 .monitor-primary-card .stream-player-card > header > span { color: #345575; }
 .monitor-primary-card .stream-player-card button { border-color: #cddbea; color: #486079; background: #fff; }
 .monitor-primary-card .stream-player-card button.active { background: var(--blue); border-color: var(--blue); color: #fff; }
 .monitor-primary-card .stream-player-card > footer { display: none; }
+.managed-video-stage .frame-note { position: absolute; right: 12px; bottom: 12px; padding: 3px 9px; border-radius: 999px; color: #cfe0f3; background: rgba(10, 24, 44, .72); border: 1px solid rgba(255, 255, 255, .14); font-size: 11px; pointer-events: none; }
 .monitor-dialog-backdrop { z-index: 130; background: rgba(4, 15, 29, .82); }
 .monitor-dialog { width: min(1420px, 96vw); max-height: 94vh; padding: 14px; border-radius: 18px; background: #f5f8fc; overflow: auto; box-shadow: 0 30px 80px rgba(0, 0, 0, .35); }
 .monitor-dialog > header { padding: 4px 4px 13px; display: flex; align-items: center; justify-content: space-between; gap: 15px; }
