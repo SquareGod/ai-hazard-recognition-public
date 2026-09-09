@@ -141,7 +141,7 @@ class StreamManager:
                 if state.stop_event.is_set():
                     capture.release()
                     break
-                state.connection_status="connected"; state.phase="waiting_first_frame"
+                state.connection_status="connected"; state.phase="waiting_first_frame"; state.last_error=None; state.last_error_code=None
                 try:
                     while not state.stop_event.is_set():
                         try: ok, image = capture.read()
