@@ -99,7 +99,7 @@ class StreamManager:
     def _wait_for_stop(stop: threading.Event, delay: float) -> bool: return stop.wait(delay)
 
     def start(self, camera_id: str, source_url: str, inference_fps: float, *, work_area: str, auto_email: bool, analysis_mode: str = "realtime", inspection_interval_sec: int = 300) -> dict:
-        state = StreamState(uuid.uuid4().hex, camera_id, source_url, min(inference_fps, 2.0), work_area, auto_email, analysis_mode, inspection_interval_sec)
+        state = StreamState(uuid.uuid4().hex, camera_id, source_url, min(inference_fps, 5.0), work_area, auto_email, analysis_mode, inspection_interval_sec)
         from .projects import project_store
         project_store.bind("stream", state.stream_id)
         with self._lock: self._states[state.stream_id] = state

@@ -224,6 +224,13 @@ export default function ConsoleApp({ currentUser, onLogout }: { currentUser?: Sy
     try { const project = await consoleApi.updateProject(selectedProjectId, name); setProjects((items) => items.map((item) => item.id === project.id ? project : item)); setProjectDraft(""); setEditingProject(false); flash("项目名称已更新"); }
     catch (error) { flash(error instanceof Error ? error.message : "项目名称更新失败"); }
   }
+
+  async function deleteProject() {
+    if (selectedProject.id === DEFAULT_PROJECT.id) { flash("默认项目不能删除"); return; }
+    if (!window.confirm(`确认删除项目「${selectedProject.name}」？该项目下的资源关联将一并移除，且不可恢复。`)) return;
+    try { await consoleApi.deleteProject(selectedProject.id); setProjects((items) => items.filter((item) => item.id !== selectedProject.id)); changeProject(DEFAULT_PROJECT.id); setProjectDraft(""); setEditingProject(false); flash(`项目「${selectedProject.name}」已删除`); }
+    catch (error) { flash(error instanceof Error ? error.message : "项目删除失败"); }
+  }
   async function openDispatch() {
     setPage("dispatch"); setMobileNav(false);
     try { await consoleApi.getNotifications(true); setUnreadNotifications(0); } catch { /* offline demo remains usable */ }
@@ -466,7 +473,7 @@ export default function ConsoleApp({ currentUser, onLogout }: { currentUser?: Sy
         />
       )}
       {personDialog && <PersonDialog close={() => setPersonDialog(false)} submit={addPerson} />}
-      {editingProject && <div className="modal-backdrop"><div className="person-dialog project-dialog"><header><div><b>编辑当前项目</b><p>项目切换后，页面数据会按项目重新加载。</p></div><button onClick={() => setEditingProject(false)}><X size={19}/></button></header><div className="dialog-form"><label><span>项目名称</span><input autoFocus value={projectDraft} onChange={(event) => setProjectDraft(event.target.value)} /></label><label><span>新增项目</span><input placeholder="输入名称后点击新增" value={projectDraft} onChange={(event) => setProjectDraft(event.target.value)} /></label></div><footer><button className="secondary-action" onClick={createProject}>新增项目</button><button className="primary-action" onClick={renameProject}>保存名称</button></footer></div></div>}
+      {editingProject && <div className="modal-backdrop"><div className="person-dialog project-dialog"><header><div><b>编辑当前项目</b><p>项目切换后，页面数据会按项目重新加载。</p></div><button onClick={() => setEditingProject(false)}><X size={19}/></button></header><div className="dialog-form"><label><span>项目名称</span><input autoFocus value={projectDraft} onChange={(event) => setProjectDraft(event.target.value)} /></label><label><span>新增项目</span><input placeholder="输入名称后点击新增" value={projectDraft} onChange={(event) => setProjectDraft(event.target.value)} /></label></div><footer>{selectedProject.id !== DEFAULT_PROJECT.id && <button className="danger-outline" style={{ marginRight: "auto" }} onClick={() => { if (window.confirm(`确认删除项目「${selectedProject.name}」？该操作不可恢复。`)) void deleteProject(); }}>删除项目</button>}<button className="secondary-action" onClick={createProject}>新增项目</button><button className="primary-action" onClick={renameProject}>保存名称</button></footer></div></div>}
       {toast && <div className="toast-message"><CheckCircle2 size={19} />{toast}</div>}
     </main>
   );
@@ -530,7 +537,7 @@ function LivePage({ projectId, hazards, people, setHazards, openHazard, flash, n
   const [analyzing, setAnalyzing] = useState(false);
   const [progressText, setProgressText] = useState("等待上传");
   const [backendState, setBackendState] = useState<"checking" | "ready" | "offline">("checking");
-  const [algorithmSettings, setAlgorithmSettings] = useState<AlgorithmSettings>({ realtime_fps: 2, inspection_interval_sec: 300, test_stream_interval_sec: 3 });
+  const [algorithmSettings, setAlgorithmSettings] = useState<AlgorithmSettings>({ realtime_fps: 0.2, inspection_interval_sec: 300, test_stream_interval_sec: 3 });
   const [algorithmCapabilities, setAlgorithmCapabilities] = useState<Record<string, unknown> | null>(null);
   const [autoEmail, setAutoEmail] = useState(true);
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -547,7 +554,7 @@ function LivePage({ projectId, hazards, people, setHazards, openHazard, flash, n
   useEffect(() => { projectIdRef.current = projectId; }, [projectId]);
 
   useEffect(() => {
-    const defaults: AlgorithmSettings = { realtime_fps: 2, inspection_interval_sec: 300, test_stream_interval_sec: 3 };
+    const defaults: AlgorithmSettings = { realtime_fps: 0.2, inspection_interval_sec: 300, test_stream_interval_sec: 3 };
     const settings = typeof consoleApi.getAlgorithmSettings === "function" ? consoleApi.getAlgorithmSettings() : Promise.resolve(defaults);
     const capabilities = typeof consoleApi.getAlgorithmCapabilities === "function" ? consoleApi.getAlgorithmCapabilities() : Promise.resolve(null);
     void Promise.all([consoleApi.health(), settings, capabilities]).then(([health, loadedSettings, loadedCapabilities]) => { setBackendState(health.ok && health.api_key_configured ? "ready" : "offline"); setAlgorithmSettings(loadedSettings); setAlgorithmCapabilities(loadedCapabilities); }).catch(() => setBackendState("offline"));
@@ -974,7 +981,7 @@ function DevicesPage({ flash, navigate }: { flash: (message: string) => void; na
   const [channels, setChannels] = useState<HikvisionChannel[]>([]);
   const [nvr, setNvr] = useState({ id: "", name: "现场NVR", host: "", port: "8000", username: "", password: "" });
   const [sessions, setSessions] = useState<StreamSession[]>([]);
-  const [algorithmSettings, setAlgorithmSettings] = useState<AlgorithmSettings>({ realtime_fps: 2, inspection_interval_sec: 300, test_stream_interval_sec: 3 });
+  const [algorithmSettings, setAlgorithmSettings] = useState<AlgorithmSettings>({ realtime_fps: 0.2, inspection_interval_sec: 300, test_stream_interval_sec: 3 });
   const refreshHikvision = () => Promise.all([consoleApi.listHikvisionProfiles(), consoleApi.listHikvisionChannels()]).then(([p, c]) => { setProfiles(p); setChannels(c); });
   useEffect(() => { consoleApi.listVideoSources().then(setGatewaySources).catch(() => setGatewaySources([])); }, []);
   useEffect(() => { refreshHikvision().catch(() => undefined); }, []);

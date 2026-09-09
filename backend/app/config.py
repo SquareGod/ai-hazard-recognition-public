@@ -127,7 +127,7 @@ def load_settings() -> Settings:
         detector_confidence=float(_deep_get(raw, "detector.confidence", 0.18)),
         detector_iou=float(_deep_get(raw, "detector.iou", 0.50)),
         default_video_fps=float(_deep_get(raw, "sampling.default_video_fps", 1.0)),
-        realtime_fps=float(_deep_get(raw, "sampling.realtime_fps", 4.0)),
+        realtime_fps=float(os.getenv("REALTIME_FPS", str(_deep_get(raw, "sampling.realtime_fps", 0.2)))),
         max_frames=int(_deep_get(raw, "sampling.max_frames", 12)),
         camera_duration_sec=int(_deep_get(raw, "sampling.camera_duration_sec", 10)),
         blur_threshold=float(_deep_get(raw, "sampling.blur_threshold", 35.0)),

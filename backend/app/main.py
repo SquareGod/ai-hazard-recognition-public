@@ -210,6 +210,12 @@ def rename_project(project_id: str, request: Request, payload: dict):
     return project_store.save(str(payload.get("name", "")), project_id)
 
 
+@app.delete("/api/v1/projects/{project_id}")
+def delete_project(project_id: str, request: Request):
+    require_session(request, roles={"system_admin"}, csrf=True)
+    return project_store.delete(project_id)
+
+
 @app.put("/api/v1/projects/{project_id}/members/{user_id}")
 def set_project_member(project_id: str, user_id: str, request: Request, payload: dict):
     require_session(request, roles={"system_admin"}, csrf=True)

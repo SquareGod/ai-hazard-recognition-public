@@ -123,6 +123,17 @@ class ProjectStore:
                 db.execute("INSERT INTO projects VALUES(?,?)", (ident, name))
         return {"id": ident, "name": name}
 
+    def delete(self, ident: str) -> dict:
+        if ident == DEFAULT_PROJECT:
+            raise HTTPException(422, "默认项目不能删除")
+        with self.connect() as db:
+            if not db.execute("SELECT 1 FROM projects WHERE id=?", (ident,)).fetchone():
+                raise HTTPException(404, "项目不存在")
+            db.execute("DELETE FROM resources WHERE project_id=?", (ident,))
+            db.execute("DELETE FROM memberships WHERE project_id=?", (ident,))
+            db.execute("DELETE FROM projects WHERE id=?", (ident,))
+        return {"id": ident, "deleted": True}
+
     def set_member(self, project: str, user_id: str, enabled: bool):
         with self.connect() as db:
             if not db.execute("SELECT 1 FROM projects WHERE id=?", (project,)).fetchone():

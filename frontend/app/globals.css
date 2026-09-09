@@ -357,7 +357,7 @@ body { font-size: 16px; }
 .project-selector span { display: grid; grid-template-columns: 1fr auto; gap: 3px 7px; align-items: center; }
 .project-selector small { grid-column: 1 / -1; }
 .project-selector select { min-width: 0; border: 0; outline: 0; color: #fff; background: transparent; font-size: 13px; font-weight: 700; }
-.project-selector select option { color: var(--ink); background: #fff; }
+.project-selector select option { color: #eaf2fc; background: #1c4470; }
 .project-selector button { padding: 2px 4px; border: 0; border-radius: 5px; color: #cfe5ff; background: rgba(255,255,255,.11); font-size: 11px; }
 .stream-navigation { align-items: center; }
 .stream-navigation > div:last-child { display: flex; flex-wrap: wrap; gap: 9px; }

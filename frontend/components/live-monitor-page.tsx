@@ -252,7 +252,7 @@ export default function LiveMonitorPage({ api = consoleApi, devices = [] }: Prop
         await api.stopStreamSession(active.session_id);
         setSessions((items) => items.filter((item) => item.session_id !== active.session_id));
       } else {
-        const session = await api.startStreamSession({ source_id: cameraId, inference_fps: 2, auto_email: sendEmailOnFinding, analysis_mode: "realtime" });
+        const session = await api.startStreamSession({ source_id: cameraId, inference_fps: 0.2, auto_email: sendEmailOnFinding, analysis_mode: "realtime" });
         setSessions((items) => [...items.filter((item) => item.source_id !== cameraId), session]);
       }
     } catch (reason) { setError(reason instanceof Error ? reason.message : "AI 任务操作失败"); }
