@@ -535,7 +535,7 @@ function LivePage({ projectId, hazards, people, setHazards, openHazard, flash, n
   const [autoEmail, setAutoEmail] = useState(true);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraError, setCameraError] = useState("");
-  const [testOpen, setTestOpen] = useState(false);
+  const [testOpen, setTestOpen] = useState(true);
   const [aiSessions, setAiSessions] = useState<StreamSession[]>([]);
   const [selectedAiCamera, setSelectedAiCamera] = useState("");
   const [aiTicket, setAiTicket] = useState<import("@/lib/api").MonitorPlaybackTicket | null>(null);
