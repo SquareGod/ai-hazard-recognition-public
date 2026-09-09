@@ -121,3 +121,59 @@ def test_bridge_reaps_pipelines_whose_owners_heartbeat_expired():
         bridge_app._pipelines.clear(); bridge_app._leases.clear()
         bridge_app._pipelines.update(saved_pipelines)
         bridge_app._leases.update({key: dict(value) for key, value in saved_leases.items()})
+
+
+def test_pipeline_keeps_last_decoded_frame_for_snapshot_fast_path():
+    """管线在推流时保留最近一帧，供缩略图快路径零成本取图；停止后清空。"""
+    sdk = FakeSdk(); publisher = FakePublisher()
+    class Decoder:
+        def __init__(self, on_frame): self.on_frame = on_frame
+        def close(self): pass
+    pipeline = StreamPipeline({"host": "fake", "port": 1}, "unused-test-secret", 1, "fake/1", sdk, publisher, Decoder)
+    pipeline.start()
+    time.sleep(0.05)
+    assert pipeline.last_frame is None
+    frame = YuvFrame(b"y" * 6, 2, 2, 10)
+    pipeline._on_frame(frame)
+    deadline = time.time() + 2
+    while time.time() < deadline and pipeline.last_frame is None:
+        time.sleep(0.02)
+    assert pipeline.last_frame is frame
+    pipeline.stop()
+    assert pipeline.last_frame is None
+
+
+def test_yuv_frame_to_jpeg_encodes_via_short_lived_ffmpeg(monkeypatch):
+    from hikvision_bridge import sdk_runtime as rt
+
+    captured = {}
+
+    class FakeCompleted:
+        returncode = 0
+        stdout = b"jpeg-bytes"
+        stderr = b""
+
+    def fake_run(command, input, stdout, stderr, timeout):
+        captured["command"] = command
+        captured["input"] = input
+        return FakeCompleted()
+
+    monkeypatch.setattr(rt.subprocess, "run", fake_run)
+    out = rt.yuv_frame_to_jpeg(YuvFrame(b"x" * 6, 2, 2, 10), "ffmpeg-test")
+    assert out == b"jpeg-bytes"
+    assert captured["command"][0] == "ffmpeg-test"
+    assert "-frames:v" in captured["command"] and "mjpeg" in captured["command"]
+    assert captured["input"] == b"x" * 6
+
+
+def test_yuv_frame_to_jpeg_surfaces_ffmpeg_failure(monkeypatch):
+    from hikvision_bridge import sdk_runtime as rt
+
+    class FakeFailed:
+        returncode = 1
+        stdout = b""
+        stderr = b"boom"
+
+    monkeypatch.setattr(rt.subprocess, "run", lambda *a, **k: FakeFailed())
+    with pytest.raises(RuntimeError, match="boom"):
+        rt.yuv_frame_to_jpeg(YuvFrame(b"x" * 6, 2, 2, 10), "ffmpeg-test")

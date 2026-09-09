@@ -159,9 +159,11 @@ class FfmpegPublisher:
         if self._proc is not None:
             return
         url = self.publish_url.rstrip("/") + "/" + path_name.lstrip("/")
+        # 弱CPU桥接机可设 HIKVISION_X264_PRESET=ultrafast 降低编码延迟；默认 veryfast。
+        preset = os.getenv("HIKVISION_X264_PRESET", "veryfast")
         command = [self.ffmpeg_bin, "-hide_banner", "-loglevel", "warning", "-f", "rawvideo", "-pix_fmt", "yuv420p",
                    "-video_size", f"{first_frame.width}x{first_frame.height}", "-framerate", str(max(1, first_frame.fps)),
-                   "-i", "-", "-an", "-c:v", "libx264", "-preset", "veryfast", "-tune", "zerolatency",
+                   "-i", "-", "-an", "-c:v", "libx264", "-preset", preset, "-tune", "zerolatency",
                    "-pix_fmt", "yuv420p", "-g", str(max(2, first_frame.fps * 2)), "-f", "rtsp", "-rtsp_transport", "tcp", url]
         self._proc = self._factory(command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         self.push(first_frame)
@@ -190,6 +192,27 @@ class FfmpegPublisher:
         except Exception:
             try: proc.kill()
             except Exception: pass
+
+
+def yuv_frame_to_jpeg(frame: YuvFrame, ffmpeg_bin: str | None = None) -> bytes:
+    """Encode one decoded YUV420 frame to JPEG via a short-lived ffmpeg process.
+
+    Used by the snapshot fast path: when the channel is already being decoded
+    by a live pipeline, this serves a thumbnail without touching the NVR.
+    """
+    bin_path = ffmpeg_bin or os.getenv("HIKVISION_FFMPEG", os.getenv("FFMPEG_BIN", "ffmpeg"))
+    expected = frame.width * frame.height * 3 // 2
+    command = [bin_path, "-hide_banner", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "yuv420p",
+               "-video_size", f"{frame.width}x{frame.height}", "-i", "-",
+               "-frames:v", "1", "-q:v", "5", "-f", "mjpeg", "pipe:1"]
+    try:
+        proc = subprocess.run(command, input=frame.data[:expected], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5)
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError("ffmpeg 编码预览图超时") from exc
+    if proc.returncode != 0 or not proc.stdout:
+        detail = proc.stderr.decode("utf-8", "replace").strip()[:200]
+        raise RuntimeError(f"ffmpeg 编码预览图失败：{detail or '无输出'}")
+    return proc.stdout
 
 
 class PlayCtrlDecoder:
@@ -406,16 +429,29 @@ class CtypesHikvisionSdk:
         try:
             if not hasattr(sdk, "NET_DVR_CaptureJPEGPicture_NEW"):
                 raise RuntimeError("当前HCNetSDK不支持通道抓图")
-            para = _JpegPara(0xFF, 1)
-            # Large enough for a typical 4K JPEG while still bounded.
-            buffer = ctypes.create_string_buffer(8 * 1024 * 1024)
-            returned = ctypes.c_uint32(0)
             sdk.NET_DVR_CaptureJPEGPicture_NEW.argtypes = [ctypes.c_long, ctypes.c_long, ctypes.POINTER(_JpegPara), ctypes.c_void_p, ctypes.c_uint32, ctypes.POINTER(ctypes.c_uint32)]
             sdk.NET_DVR_CaptureJPEGPicture_NEW.restype = ctypes.c_bool
-            ok = sdk.NET_DVR_CaptureJPEGPicture_NEW(user, int(channel_no), ctypes.byref(para), buffer, len(buffer), ctypes.byref(returned))
-            if not ok or returned.value <= 0:
-                raise RuntimeError(f"NET_DVR_CaptureJPEGPicture_NEW失败，错误码 {sdk.NET_DVR_GetLastError()}")
-            return bytes(buffer.raw[:returned.value])
+            # Large enough for a typical 4K JPEG while still bounded.
+            buffer = ctypes.create_string_buffer(8 * 1024 * 1024)
+            attempts: list[str] = []
+            # 0xFF=沿用NVR自身配置；2=704x576（部分固件拒绝0xFF时的兜底）。
+            sizes = [0xFF, 2]
+            channels = [int(channel_no)]
+            # 与预览回退对称：老NVR的数字通道从33起（1-32为模拟保留），同步目录
+            # 给出的是1起编号，抓图需要+32；反之亦然。双向都试。
+            if channel_no > 32:
+                channels.append(int(channel_no) - 32)
+            else:
+                channels.append(int(channel_no) + 32)
+            for channel in channels:
+                for size in sizes:
+                    para = _JpegPara(size, 1)
+                    returned = ctypes.c_uint32(0)
+                    ok = sdk.NET_DVR_CaptureJPEGPicture_NEW(user, channel, ctypes.byref(para), buffer, len(buffer), ctypes.byref(returned))
+                    if ok and returned.value > 0:
+                        return bytes(buffer.raw[:returned.value])
+                    attempts.append(f"通道{channel}/尺寸{size}:错误码 {sdk.NET_DVR_GetLastError()}")
+            raise RuntimeError("NET_DVR_CaptureJPEGPicture_NEW失败（" + "；".join(attempts) + "）。若持续失败，该通道可能未接入摄像头")
         finally:
             self._release_login(key)
 
@@ -544,6 +580,7 @@ class StreamPipeline:
         self.queue = BoundedFrameQueue(3); self.state = "starting"
         self.received_chunks = self.decoded_frames = self.published_frames = self.dropped_frames = 0
         self.last_frame_at: float | None = None; self.last_error: str | None = None
+        self.last_frame: YuvFrame | None = None
         self._stop = threading.Event(); self._session: SdkSession | None = None
         self._runtime_error = threading.Event()
         self._decoder: PlayCtrlDecoder | None = None; self._worker: threading.Thread | None = None
@@ -587,6 +624,7 @@ class StreamPipeline:
                     if not self._publisher_started:
                         self.publisher.start(self.path_name, frame); self._publisher_started = True
                     else: self.publisher.push(frame)
+                    self.last_frame = frame
                     self.published_frames += 1; self.dropped_frames = self.queue.dropped
                     self.last_error = None
             except Exception as exc:
@@ -616,3 +654,4 @@ class StreamPipeline:
         self._stop.set()
         if self._worker and self._worker is not threading.current_thread(): self._worker.join(timeout=5)
         self.password = ""
+        self.last_frame = None

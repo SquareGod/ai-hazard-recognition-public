@@ -12,7 +12,7 @@ from typing import Any
 from fastapi import FastAPI, Header, HTTPException, Response
 from pydantic import BaseModel, Field
 
-from .sdk_runtime import CtypesHikvisionSdk, FfmpegPublisher, StreamPipeline, _unprotect, list_channels, protect_secret
+from .sdk_runtime import CtypesHikvisionSdk, FfmpegPublisher, StreamPipeline, _unprotect, list_channels, protect_secret, yuv_frame_to_jpeg
 
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "runtime"; DATA.mkdir(exist_ok=True)
@@ -172,6 +172,15 @@ def streams(x_bridge_token: str | None = Header(default=None)) -> list[dict[str,
     _guard(x_bridge_token); return [_status(k) for k in _pipelines]
 
 
+_snapshot_locks: dict[str, threading.Lock] = {}
+_snapshot_locks_guard = threading.Lock()
+
+
+def _channel_snapshot_lock(channel_id: str) -> threading.Lock:
+    with _snapshot_locks_guard:
+        return _snapshot_locks.setdefault(channel_id, threading.Lock())
+
+
 @app.post("/channels/{channel_id}/snapshot")
 def snapshot(channel_id: str, payload: SnapshotIn, x_bridge_token: str | None = Header(default=None)) -> Response:
     """Low-frequency preview image; it shares the SDK login but never owns a streaming lease."""
@@ -179,11 +188,31 @@ def snapshot(channel_id: str, payload: SnapshotIn, x_bridge_token: str | None = 
     profile = _load().get(payload.profile_id)
     if not profile:
         raise HTTPException(404, "NVR配置不存在")
+    lock = _channel_snapshot_lock(channel_id)
+    # 上一张远程抓图还没返回时直接让调用方稍后再试：公网链路上堆积抓图
+    # 请求会拖慢正在播放的实时流，这是“卡顿且延迟不稳”的诱因之一。
+    if not lock.acquire(blocking=False):
+        raise HTTPException(429, "上一次抓图尚未返回，请稍候")
     try:
-        image = CtypesHikvisionSdk().capture_jpeg(profile, _unprotect(DATA / profile["secret_ref"]), payload.channel_no)
-    except (OSError, RuntimeError) as exc:
-        raise HTTPException(400, f"抓取海康预览图失败：{exc}") from exc
-    return Response(content=image, media_type="image/jpeg", headers={"Cache-Control": "no-store, max-age=0"})
+        # 快路径：通道正被管线解码时直接用最近一帧，完全不打扰NVR。
+        with _lock:
+            pipeline = _pipelines.get(channel_id)
+            frame = pipeline.last_frame if pipeline else None
+            fresh = frame is not None and pipeline.last_frame_at is not None and time.time() - pipeline.last_frame_at < 10
+        if fresh:
+            try:
+                image = yuv_frame_to_jpeg(frame)
+            except (OSError, RuntimeError):
+                image = None  # 本地编码失败时退回远程抓图兜底
+            if image:
+                return Response(content=image, media_type="image/jpeg", headers={"Cache-Control": "no-store, max-age=0"})
+        try:
+            image = CtypesHikvisionSdk().capture_jpeg(profile, _unprotect(DATA / profile["secret_ref"]), payload.channel_no)
+        except (OSError, RuntimeError) as exc:
+            raise HTTPException(400, f"抓取海康预览图失败：{exc}") from exc
+        return Response(content=image, media_type="image/jpeg", headers={"Cache-Control": "no-store, max-age=0"})
+    finally:
+        lock.release()
 
 
 @app.post("/channels/{channel_id}/leases/{owner_id}")

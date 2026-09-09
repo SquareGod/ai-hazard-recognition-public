@@ -39,17 +39,54 @@ function MonitorDiagnostics({ session, fallback }: { session?: StreamSession; fa
 
 function MonitorSnapshot({ camera, src, onSelect, session }: { camera: MonitorCamera; src: () => string; onSelect: () => void; session?: StreamSession }) {
   const [image, setImage] = useState("");
-  const [failed, setFailed] = useState(false);
+  const [error, setError] = useState("");
+  const failuresRef = useRef(0);
+  const srcRef = useRef(src);
+  srcRef.current = src;
   useEffect(() => {
     let active = true;
-    const refresh = () => { if (active) { setImage(src()); setFailed(false); } };
-    refresh();
-    const timer = window.setInterval(refresh, 3000);
-    return () => { active = false; window.clearInterval(timer); };
-  }, [src]);
+    let timer: number | undefined;
+    let objectUrl = "";
+    const load = async () => {
+      if (!active) return;
+      try {
+        const target = srcRef.current();
+        if (!target) throw new Error("预览地址未配置");
+        const response = await fetch(target, { cache: "no-store" });
+        if (!active) return;
+        if (!response.ok) {
+          let detail = `HTTP ${response.status}`;
+          try { const payload = await response.json(); if (payload?.detail) detail = String(payload.detail); } catch { /* 保留状态码 */ }
+          throw new Error(detail);
+        }
+        const blob = await response.blob();
+        if (!active) return;
+        const next = URL.createObjectURL(blob);
+        setImage(next);
+        setError("");
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+        objectUrl = next;
+        failuresRef.current = 0;
+        timer = window.setTimeout(() => void load(), 3000);
+      } catch (reason) {
+        if (!active) return;
+        failuresRef.current += 1;
+        setError(reason instanceof Error ? reason.message : "预览获取失败");
+        // 失败退避 3s→8s→15s 封顶：公网链路上轮询抓图失败时不能拖垮正在播放的主画面。
+        const delay = failuresRef.current >= 5 ? 15000 : failuresRef.current >= 2 ? 8000 : 3000;
+        timer = window.setTimeout(() => void load(), delay);
+      }
+    };
+    void load();
+    return () => {
+      active = false;
+      if (timer !== undefined) window.clearTimeout(timer);
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [camera.id]);
   return <button className="monitor-preview" onClick={onSelect} aria-label={`切换 ${camera.name} 为主画面`} title={`切换 ${camera.name} 为主画面`}>
-    {image && !failed ? <img src={image} alt={`${camera.name}辅助预览`} onError={() => setFailed(true)} /> : <div className="monitor-preview-empty">正在获取预览图</div>}
-    <span><b>{camera.name}</b><small>{camera.work_area || "未分配工区"} · {session ? "AI运行" : "点击查看"}</small></span>
+    {image ? <img src={image} alt={`${camera.name}辅助预览`} /> : <div className="monitor-preview-empty">{error ? `预览暂不可用：${error}` : "正在获取预览图"}</div>}
+    <span><b>{camera.name}</b><small>{camera.work_area || "未分配工区"} · {session ? "AI运行" : "点击查看"}{error && image ? " · 预览重试中" : ""}</small></span>
   </button>;
 }
 
