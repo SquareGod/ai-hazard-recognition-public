@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import sqlite3
 import tempfile
@@ -25,7 +25,7 @@ class AuthAndGroupTests(unittest.TestCase):
 
     def test_password_is_argon2id_and_first_login_requires_change(self) -> None:
         user, temporary = self.auth.create_user(
-            name="张安全", email="safety@example.com", role="safety_officer", work_area="A1工区"
+            name="张安全", email="safety@example.com", role="safety_officer", work_area="示范工区"
         )
         self.assertNotIn("password", user)
         db = sqlite3.connect(self.db)
@@ -45,7 +45,7 @@ class AuthAndGroupTests(unittest.TestCase):
             {"label_id": "H001", "name": "未佩戴安全帽", "final_status": "confirmed_hazard", "severity": "general", "evidence": ["头部未见安全帽"], "source_frame_ids": ["frame-1"]},
             {"label_id": "H015", "name": "洞口无盖板", "final_status": "confirmed_hazard", "severity": "major", "evidence": ["洞口敞开"], "source_frame_ids": ["frame-1"]},
         ]
-        children = self.workflow.create_from_findings(job_id="job-1", work_area="A1工区", findings=findings, before_image="evidence.jpg")
+        children = self.workflow.create_from_findings(job_id="job-1", work_area="示范工区", findings=findings, before_image="evidence.jpg")
         self.assertEqual(2, len(children))
         self.assertEqual(1, len({item["group_id"] for item in children}))
         group = self.workflow.get_group(children[0]["group_id"])
@@ -64,9 +64,9 @@ class AuthAndGroupTests(unittest.TestCase):
         self.assertNotEqual("已闭合", self.workflow.get_group(group["id"])["status"])
 
     def test_notification_read_state_is_per_user(self) -> None:
-        safety, _ = self.auth.create_user(name="张安全", email="a@example.com", role="safety_officer", work_area="A1工区")
+        safety, _ = self.auth.create_user(name="张安全", email="a@example.com", role="safety_officer", work_area="示范工区")
         director, _ = self.auth.create_user(name="赵总监", email="b@example.com", role="safety_director", work_area="全部工区")
-        child = self.workflow.create_from_findings(job_id="job-2", work_area="A1工区", findings=[{"label_id": "H001", "name": "未佩戴安全帽", "final_status": "confirmed_hazard", "severity": "general", "evidence": ["可见"]}])[0]
+        child = self.workflow.create_from_findings(job_id="job-2", work_area="示范工区", findings=[{"label_id": "H001", "name": "未佩戴安全帽", "final_status": "confirmed_hazard", "severity": "general", "evidence": ["可见"]}])[0]
         self.workflow.record_email_status([child["id"]], [{"role": "safety_officer", "status": "sent"}, {"role": "safety_director", "status": "sent"}])
         note_id = self.workflow.notifications_for_user(safety)[0]["id"]
         self.workflow.mark_notification_read_for_user(note_id, safety)
@@ -74,9 +74,9 @@ class AuthAndGroupTests(unittest.TestCase):
         self.assertEqual(1, self.workflow.unread_count_for_user(director))
 
     def test_login_csrf_and_optimistic_verification_route(self) -> None:
-        user, temporary = self.auth.create_user(name="张安全", email="route@example.com", role="safety_officer", work_area="A1工区")
+        user, temporary = self.auth.create_user(name="张安全", email="route@example.com", role="safety_officer", work_area="示范工区")
         self.auth.change_password(user["id"], temporary, "Changed-Password-2026")
-        child = self.workflow.create_from_findings(job_id="job-route", work_area="A1工区", findings=[{"label_id": "H001", "name": "未佩戴安全帽", "final_status": "confirmed_hazard", "severity": "general", "evidence": ["可见"]}])[0]
+        child = self.workflow.create_from_findings(job_id="job-route", work_area="示范工区", findings=[{"label_id": "H001", "name": "未佩戴安全帽", "final_status": "confirmed_hazard", "severity": "general", "evidence": ["可见"]}])[0]
         with patch("app.auth.auth_store", self.auth), patch("app.main.auth_store", self.auth), patch("app.main.workflow_store", self.workflow), TestClient(app) as client:
             login = client.post("/api/v1/auth/login", json={"email": "route@example.com", "password": "Changed-Password-2026"})
             self.assertEqual(200, login.status_code)

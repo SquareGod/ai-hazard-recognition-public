@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   BadgeCheck,
@@ -494,7 +494,7 @@ function OverviewPage({ hazards, openHazard, navigate }: { hazards: Hazard[]; op
 
   return <div className="page-stack">
     <section className="hero-banner">
-      <div className="hero-copy"><span className="section-kicker">施工安全演示环境</span><h2>今天最重要的，是让每一条隐患真正闭合</h2><p>AI识别结果会进入建单、分发、整改和复核流程。请在部署后按实际工区配置人员与权限。</p><div className="hero-actions"><button className="primary-action" onClick={() => navigate("live")}><Play size={17} />进入AI识别</button><button className="secondary-action" onClick={() => navigate("dispatch")}><Send size={17} />查看分发任务</button></div></div>
+      <div className="hero-copy"><span className="section-kicker">施工安全演示环境</span><h2>今天最重要的，是让每一条隐患真正闭合</h2><p>AI识别结果已自动进入建单、分发、整改和复核流程。当前试运行范围为示范工区。</p><div className="hero-actions"><button className="primary-action" onClick={() => navigate("live")}><Play size={17} />进入AI识别</button><button className="secondary-action" onClick={() => navigate("dispatch")}><Send size={17} />查看分发任务</button></div></div>
       <div className="closure-orbit"><div><strong>{active.length}</strong><span>未闭合隐患</span></div><i className="orbit-one"/><i className="orbit-two"/><i className="orbit-three"/></div>
     </section>
 
@@ -959,7 +959,7 @@ function PeoplePage({ people, setPeople, openAdd, flash }: { people: Person[]; s
   }
 
   return <div className="page-stack">
-    <section className="people-hero"><div><span className="section-kicker">项目通讯录</span><h2>人员、工区与分发责任统一配置</h2><p>演示环境仅配置示范工区角色；正式使用时可按工区分别维护负责人。</p></div><div><span><strong>{people.filter((p) => p.status === "启用").length}</strong>启用人员</span><span><strong>1</strong>试运行工区</span><button className="primary-action" onClick={openAdd}><UserRoundPlus size={17}/>新增人员</button></div></section>
+    <section className="people-hero"><div><span className="section-kicker">项目通讯录</span><h2>人员、工区与分发责任统一配置</h2><p>演示阶段仅配置示范工区4个角色；正式使用时可按工区分别维护负责人。</p></div><div><span><strong>{people.filter((p) => p.status === "启用").length}</strong>启用人员</span><span><strong>1</strong>试运行工区</span><button className="primary-action" onClick={openAdd}><UserRoundPlus size={17}/>新增人员</button></div></section>
     <section className="surface people-card"><div className="people-toolbar"><label className="search-control"><Search size={16}/><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="搜索姓名、岗位、工区或手机号"/></label><select><option>全部角色</option><option>安全员</option><option>工区负责人</option><option>项目经理</option><option>安全总监</option></select><select><option>示范工区</option><option>全项目</option></select><span>手机号和证件信息默认脱敏</span></div>
       <div className="data-table-wrap"><table className="data-table people-table"><thead><tr><th>人员</th><th>岗位与职责</th><th>所属范围</th><th>手机号</th><th>证件号码</th><th>通知</th><th>状态</th><th>操作</th></tr></thead><tbody>{filtered.map((person) => <tr key={person.id}><td><div className="person-cell"><span>{person.name.slice(0, 1)}</span><b>{person.name}<small>{person.id}</small></b></div></td><td><b>{person.role}</b><small>{person.duty}</small></td><td><b>{person.workArea}</b><small>{person.company}</small></td><td><code>{maskPhone(person.phone)}</code></td><td><code>{person.idCard}</code></td><td><span className={person.notificationEnabled ? "notify-on" : "notify-off"}>{person.notificationEnabled ? "接收通知" : "已关闭"}</span></td><td><span className={`person-status ${person.status === "启用" ? "enabled" : "disabled"}`}>{person.status}</span></td><td><button className="table-link" onClick={() => toggle(person)}>{person.status === "启用" ? "停用" : "启用"}</button></td></tr>)}</tbody></table></div>
     </section>

@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import unittest
 import hashlib
@@ -58,7 +58,7 @@ class FakeInference:
 
 
 def sample_spec() -> VideoSourceSpec:
-    return VideoSourceSpec("cam-1", "一号摄像头", "rtsp", "rtsp://u:p@10.0.0.8/live", "A1工区")
+    return VideoSourceSpec("cam-1", "一号摄像头", "rtsp", "rtsp://u:p@10.0.0.8/live", "示范工区")
 
 
 class StreamSessionTests(unittest.TestCase):

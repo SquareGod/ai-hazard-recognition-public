@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+﻿import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const api = vi.hoisted(() => ({
@@ -28,7 +28,7 @@ describe("AI实时发现的设备入口", () => {
     api.health.mockResolvedValue({ ok: true, api_key_configured: true, email_notification: { smtp_configured: true, recipients: [] } });
     api.createVideoSource.mockResolvedValue({ id: "cam-a1-01" });
     api.startStreamSession.mockResolvedValue({ session_id: "session-1", source_id: "cam-a1-01", inference_stream_id: "stream-1", status: "running", started_at: 1, playback_urls: { webrtc: "direct-whep", hls: "direct-hls" } });
-    api.createMonitorPlaybackTicket.mockResolvedValue({ ticket_id: "ticket-1", expires_in: 300, purpose: "ai-live-preview", cameras: [{ id: "cam-a1-01", name: "CAM-A1-01", work_area: "A1工区", status: "online", enabled: true, webrtc: "/api/v1/media/ticket-1/cam-a1-01/whep", hls: "/api/v1/media/ticket-1/cam-a1-01/hls/index.m3u8" }] });
+    api.createMonitorPlaybackTicket.mockResolvedValue({ ticket_id: "ticket-1", expires_in: 300, purpose: "ai-live-preview", cameras: [{ id: "cam-a1-01", name: "CAM-A1-01", work_area: "示范工区", status: "online", enabled: true, webrtc: "/api/v1/media/ticket-1/cam-a1-01/whep", hls: "/api/v1/media/ticket-1/cam-a1-01/hls/index.m3u8" }] });
     api.releaseMonitorPlaybackTicket.mockResolvedValue({ ticket_id: "ticket-1", released: true });
     api.stopStreamSession.mockResolvedValue({});
     api.getStreamEvents.mockResolvedValue([]);

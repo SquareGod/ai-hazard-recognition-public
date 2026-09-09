@@ -1,4 +1,4 @@
-"""Stable project ownership, independent of display names and work-area names."""
+﻿"""Stable project ownership, independent of display names and work-area names."""
 from __future__ import annotations
 
 import sqlite3

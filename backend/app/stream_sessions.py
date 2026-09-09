@@ -59,7 +59,7 @@ class StreamSessionManager:
         states = self.inference.list() if hasattr(self.inference, "list") else []
         state = next((item for item in states if item.get("stream_id") == session.inference_stream_id), None)
         if state:
-            result.update({key: value for key, value in state.items() if key not in {"stream_id", "source_url", "work_area", "auto_email"}})
+            result.update({key: value for key, value in state.items() if key not in {"stream_id", "camera_id", "source_url", "work_area", "auto_email"}})
         return result
 
     def add_source(self, spec: VideoSourceSpec) -> dict[str, Any]:

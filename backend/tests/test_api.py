@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import unittest
 from unittest.mock import patch
@@ -31,10 +31,10 @@ class ApiTests(unittest.TestCase):
         request = StreamStartRequest(
             camera_id="CAM-TEST",
             source_url="rtsp://127.0.0.1/test",
-            work_area="A1工区",
+            work_area="示范工区",
             auto_email=True,
         )
-        self.assertEqual("A1工区", request.work_area)
+        self.assertEqual("示范工区", request.work_area)
         self.assertFalse(hasattr(request, "severity"))
         self.assertTrue(request.auto_email)
 
@@ -59,7 +59,7 @@ class ApiTests(unittest.TestCase):
             job_id="job-test",
             hazard_names=["洞口未防护", "未佩戴安全帽"],
             severity="general",
-            work_area="A1工区",
+            work_area="示范工区",
             deadline="24小时内",
         )
         self.assertIn("2项一般隐患", subject)
@@ -73,13 +73,13 @@ class ApiTests(unittest.TestCase):
                 json={
                     "camera_id": "CAM-TEST",
                     "source_url": "rtsp://127.0.0.1/test",
-                    "work_area": "A1工区",
+                    "work_area": "示范工区",
                     "severity": "major",
                 },
             )
             dispatch = client.post(
                 "/api/v1/jobs/job-test/notifications/email",
-                json={"work_area": "A1工区", "severity": "major"},
+                json={"work_area": "示范工区", "severity": "major"},
             )
         self.assertEqual(422, stream.status_code)
         self.assertEqual(422, dispatch.status_code)
@@ -99,7 +99,7 @@ class ApiTests(unittest.TestCase):
         ):
             response = client.post(
                 "/api/v1/jobs/job-test/notifications/email",
-                json={"work_area": "A1工区"},
+                json={"work_area": "示范工区"},
             )
         self.assertEqual(200, response.status_code)
         dispatches = response.json()["dispatches"]

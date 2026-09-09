@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+﻿import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import LiveMonitorPage, { type MonitorPageApi } from "@/components/live-monitor-page";
@@ -15,7 +15,7 @@ vi.mock("@/components/managed-stream-player", () => ({
 const cameras = Array.from({ length: 10 }, (_, index) => ({
   id: `cam-${index + 1}`,
   name: `摄像头 ${index + 1}`,
-  work_area: "A1工区",
+  work_area: "示范工区",
   status: "online" as const,
   enabled: true,
 }));
@@ -23,7 +23,7 @@ const cameras = Array.from({ length: 10 }, (_, index) => ({
 function api(expiresIn = 300): MonitorPageApi {
   return {
     listMonitorCameras: vi.fn(async ({ limit, offset }) => ({
-      items: cameras.slice(offset, offset + limit), total: cameras.length, limit, offset, work_areas: ["A1工区"],
+      items: cameras.slice(offset, offset + limit), total: cameras.length, limit, offset, work_areas: ["示范工区"],
     })),
     createMonitorPlaybackTicket: vi.fn(async (cameraIds: string[]) => ({
       ticket_id: `ticket-${cameraIds.join("-")}`,
@@ -64,7 +64,7 @@ describe("LiveMonitorPage", () => {
 
   it("工区筛选项来自后端摄像头目录", async () => {
     render(<LiveMonitorPage api={api()} devices={[]} />);
-    expect(await screen.findByRole("option", { name: "A1工区" })).toBeInTheDocument();
+    expect(await screen.findByRole("option", { name: "示范工区" })).toBeInTheDocument();
   });
 
   it("可任意选择多路，应用选择后只为主画面创建播放票据", async () => {

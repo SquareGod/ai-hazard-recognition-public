@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import unittest
 
@@ -24,7 +24,7 @@ class VideoSourceAdapterTests(unittest.TestCase):
             name="测试摄像头",
             source_type="rtsp",
             source_url="rtsp://user:secret@10.0.0.8/live?token=private",
-            work_area="A1工区",
+            work_area="示范工区",
         )
 
         resolved = RtspVideoSourceAdapter().resolve(spec)
@@ -44,7 +44,7 @@ class VideoSourceAdapterTests(unittest.TestCase):
             name="错误协议",
             source_type="rtsp",
             source_url="http://user:secret@10.0.0.8/live",
-            work_area="A1工区",
+            work_area="示范工区",
         )
 
         with self.assertRaises(VideoSourceUnavailable) as caught:
