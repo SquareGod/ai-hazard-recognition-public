@@ -17,6 +17,8 @@ type Props = {
   camera: ManagedStreamCamera;
   enlarged?: boolean;
   onEnlarge?: () => void;
+  /** 摄像头快照地址：作为等比留白区域的模糊背景，弱网/任意画幅下黑边不再突兀。 */
+  backdropSrc?: string;
 };
 
 type Mode = "webrtc" | "hls";
@@ -31,7 +33,7 @@ const statusText: Record<PlayerStatus, string> = {
   offline: "视频暂时不可用，请检查视频源",
 };
 
-export default function ManagedStreamPlayer({ camera, enlarged = false, onEnlarge }: Props) {
+export default function ManagedStreamPlayer({ camera, enlarged = false, onEnlarge, backdropSrc }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [mode, setMode] = useState<Mode>("webrtc");
   const [status, setStatus] = useState<PlayerStatus>("connecting");
@@ -169,7 +171,7 @@ export default function ManagedStreamPlayer({ camera, enlarged = false, onEnlarg
         {onEnlarge && <button onClick={onEnlarge} aria-label="放大画面"><Maximize2 size={14}/></button>}
       </div>
     </header>
-    <div className="managed-video-stage">
+    <div className="managed-video-stage">{backdropSrc && <img className="stage-backdrop" src={backdropSrc} alt="" aria-hidden />}
       <video ref={videoRef} autoPlay muted playsInline aria-label={`${camera.name}实时画面`} />
       {status !== "playing" && <div className={`player-state ${status}`}><span>{status === "hls-reconnecting" ? `${statusText[status]}（${hlsRetry}/3）` : statusText[status]}</span></div>}
       {status === "playing" && <span className="player-live-state">{statusText[status]}</span>}
