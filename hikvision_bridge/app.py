@@ -244,5 +244,8 @@ def release(channel_id: str, owner_id: str, x_bridge_token: str | None = Header(
         owners = _leases.get(channel_id, {}); owners.pop(owner_id, None)
         if not owners:
             _leases.pop(channel_id, None); pipeline = _pipelines.pop(channel_id, None)
-            if pipeline: pipeline.stop()
+            if pipeline:
+                # 后台线程停止：stop()会join取流线程（公网下可达数秒），
+                # 同步执行会拖住HTTP请求，造成切换摄像头时的顿挫感。
+                threading.Thread(target=pipeline.stop, daemon=True).start()
         return {"ok": True, **_status(channel_id)}

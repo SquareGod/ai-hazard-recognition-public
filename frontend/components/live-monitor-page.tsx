@@ -225,6 +225,7 @@ export default function LiveMonitorPage({ api = consoleApi, devices = [] }: Prop
   const areas = page.workAreas;
   const activeCameras = useMemo(() => activeCameraIds.map((id) => cameraDirectory.find((camera) => camera.id === id) || page.items.find((camera) => camera.id === id)).filter((camera): camera is MonitorCamera => Boolean(camera)), [activeCameraIds, cameraDirectory, page.items]);
   const primary = ticket?.cameras.find((camera) => camera.id === primaryId);
+  const primaryCamera = activeCameras.find((camera) => camera.id === primaryId);
   const primaryDevice = devices.find((item) => item.id === primaryId);
   const pageNumber = Math.floor(offset / PAGE_SIZE) + 1;
   const pageCount = Math.max(1, Math.ceil(page.total / PAGE_SIZE));
@@ -301,11 +302,11 @@ export default function LiveMonitorPage({ api = consoleApi, devices = [] }: Prop
       {loading && <div className="monitor-empty">正在连接摄像头……</div>}
       {!loading && error && <div className="monitor-empty error">{error}</div>}
       {!loading && !error && activeCameraIds.length === 0 && <div className="monitor-empty"><Video size={30}/><strong>暂无可监看的摄像头</strong><span>请先在设备管理添加并启用视频源。</span></div>}
-      {!loading && !error && primary && <article className="monitor-primary-card">
-        <div className="monitor-card-title"><div><strong>{primary.name}</strong><span>{primary.work_area} · {primaryDevice?.point || "未配置点位"}</span></div><AiBadge session={sessions.find((item) => item.source_id === primary.id)} /></div>
-        <ManagedStreamPlayer camera={{ id: primary.id, name: primary.name, webrtcUrl: primary.webrtc, hlsUrl: primary.hls }} onEnlarge={() => setEnlargedId(primary.id)} />
-        <MonitorDiagnostics session={sessions.find((item) => item.source_id === primary.id)} fallback={primaryDevice?.lastSeen} />
-        <div className="monitor-card-meta"><span>主画面保持实时播放；切换摄像头不会启动第二条 NVR 上游流。</span><button className={sessions.some((item) => item.source_id === primary.id) ? "danger-outline" : "secondary-action"} disabled={changingAi === primary.id} onClick={() => void toggleAi(primary.id)}>{sessions.some((item) => item.source_id === primary.id) ? "停止 AI" : "启动 AI"}</button></div>
+      {!loading && !error && primaryCamera && <article className="monitor-primary-card">
+        <div className="monitor-card-title"><div><strong>{primaryCamera.name}</strong><span>{primaryCamera.work_area} · {primaryDevice?.point || "未配置点位"}</span></div><AiBadge session={sessions.find((item) => item.source_id === primaryCamera.id)} /></div>
+        {primary ? <ManagedStreamPlayer camera={{ id: primary.id, name: primary.name, webrtcUrl: primary.webrtc, hlsUrl: primary.hls }} onEnlarge={() => setEnlargedId(primary.id)} /> : <div className="managed-video-stage monitor-switching-stage">{api.monitorSnapshotUrl && <img src={api.monitorSnapshotUrl(primaryCamera.id)} alt={`${primaryCamera.name}切换中画面`} />}<div className="player-state offline"><span>正在连接 {primaryCamera.name} 实时画面…</span></div></div>}
+        <MonitorDiagnostics session={sessions.find((item) => item.source_id === primaryCamera.id)} fallback={primaryDevice?.lastSeen} />
+        <div className="monitor-card-meta"><span>主画面保持实时播放；切换摄像头不会启动第二条 NVR 上游流。</span><button className={sessions.some((item) => item.source_id === primaryCamera.id) ? "danger-outline" : "secondary-action"} disabled={changingAi === primaryCamera.id} onClick={() => void toggleAi(primaryCamera.id)}>{sessions.some((item) => item.source_id === primaryCamera.id) ? "停止 AI" : "启动 AI"}</button></div>
       </article>}
       {!loading && !error && activeCameras.filter((camera) => camera.id !== primaryId).length > 0 && <aside className="monitor-preview-rail" aria-label="辅助摄像头预览">
         {activeCameras.filter((camera) => camera.id !== primaryId).map((camera) => <MonitorSnapshot key={camera.id} camera={camera} src={() => api.monitorSnapshotUrl?.(camera.id) || ""} onSelect={() => setPrimaryCameraId(camera.id)} session={sessions.find((item) => item.source_id === camera.id)} />)}

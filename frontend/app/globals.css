@@ -430,7 +430,9 @@ body { font-size: 16px; }
 .monitor-card-meta { flex: none; padding: 7px 12px; color: #6d7f95; background: #f8fafd; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; }
 .monitor-diagnostics { flex: none; padding: 8px 12px; border-top: 1px solid #e8eef5; color: #60748d; background: #f8fbff; display: flex; flex-wrap: wrap; gap: 5px 13px; font-size: 12px; }
 .monitor-diagnostics span { min-width: 0; }
-.monitor-preview-rail { min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: grid; grid-auto-rows: minmax(96px, 1fr); gap: 10px; align-content: start; scrollbar-width: thin; }
+.monitor-preview-rail { grid-column: 2; grid-row: 1; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: grid; grid-auto-rows: minmax(96px, 1fr); gap: 10px; align-content: start; scrollbar-width: thin; }
+.monitor-primary-card { grid-column: 1; grid-row: 1; }
+.monitor-switching-stage img { width: 100%; height: 100%; object-fit: cover; }
 .monitor-preview { min-width: 0; min-height: 0; padding: 0; overflow: hidden; border: 1px solid #d6e1ed; border-radius: 12px; color: var(--ink); background: #fff; display: grid; grid-template-columns: 44% minmax(0, 1fr); text-align: left; cursor: pointer; box-shadow: 0 6px 18px rgba(28,62,105,.06); }
 .monitor-preview:hover { border-color: #8eb3e6; background: #f6faff; }
 .monitor-preview img, .monitor-preview-empty { width: 100%; height: 100%; min-height: 0; object-fit: cover; background: #0b1a2c; }
@@ -470,6 +472,7 @@ body { font-size: 16px; }
   .monitor-heading { align-items: stretch; flex-direction: column; }
   .monitor-actions { flex-wrap: wrap; }
   .monitor-wall { height: auto; min-height: 0; grid-template-columns: 1fr; grid-template-rows: none; grid-auto-rows: auto; }
+  .monitor-primary-card, .monitor-preview-rail { grid-column: 1; grid-row: auto; }
   .monitor-preview-rail { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: none; }
   .monitor-preview { min-height: 120px; grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; }
   .monitor-camera-card .managed-video-stage { flex: none; aspect-ratio: 16 / 9; }
