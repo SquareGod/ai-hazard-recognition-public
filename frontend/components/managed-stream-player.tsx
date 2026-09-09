@@ -173,6 +173,7 @@ export default function ManagedStreamPlayer({ camera, enlarged = false, onEnlarg
       <video ref={videoRef} autoPlay muted playsInline aria-label={`${camera.name}实时画面`} />
       {status !== "playing" && <div className={`player-state ${status}`}><span>{status === "hls-reconnecting" ? `${statusText[status]}（${hlsRetry}/3）` : statusText[status]}</span></div>}
       {status === "playing" && <span className="player-live-state">{statusText[status]}</span>}
+      {status === "playing" && <span className="frame-note">画面等比完整显示 · 未裁剪</span>}
     </div>
     <footer>默认使用 WebRTC；网络或浏览器不兼容时自动切换 HLS。摄像头账号和原始地址仅保存在后端。</footer>
   </section>;

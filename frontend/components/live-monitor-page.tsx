@@ -223,7 +223,16 @@ export default function LiveMonitorPage({ api = consoleApi, devices = [] }: Prop
   }, [api, reloadKey]);
 
   const areas = page.workAreas;
-  const activeCameras = useMemo(() => activeCameraIds.map((id) => cameraDirectory.find((camera) => camera.id === id) || page.items.find((camera) => camera.id === id)).filter((camera): camera is MonitorCamera => Boolean(camera)), [activeCameraIds, cameraDirectory, page.items]);
+  const activeCameras = useMemo(() => {
+    const byId = new Map([...cameraDirectory, ...page.items].map((camera) => [camera.id, camera]));
+    const order = new Map(cameraDirectory.map((camera, index) => [camera.id, index]));
+    // 按摄像头目录顺序展示（即通道编号顺序），勾选顺序不影响预览栏排列。
+    return activeCameraIds
+      .slice()
+      .sort((a, b) => (order.get(a) ?? 9999) - (order.get(b) ?? 9999))
+      .map((id) => byId.get(id))
+      .filter((camera): camera is MonitorCamera => Boolean(camera));
+  }, [activeCameraIds, cameraDirectory, page.items]);
   const primary = ticket?.cameras.find((camera) => camera.id === primaryId);
   const primaryCamera = activeCameras.find((camera) => camera.id === primaryId);
   const primaryDevice = devices.find((item) => item.id === primaryId);
