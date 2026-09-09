@@ -33,7 +33,7 @@ class PlaybackTicket:
 
 class MonitorManager:
     TICKET_TTL_SECONDS = 300
-    MAX_CAMERAS = 4
+    MAX_CAMERAS = 16
 
     def __init__(self, *, leases: MediaPathLeaseManager, source_lookup: Callable[[str], VideoSourceSpec | None], source_list: Callable[[], list[VideoSourceSpec]] | None = None, timer_factory: Callable[[float, Callable[[], None]], Timer] = threading.Timer) -> None:
         self.leases = leases

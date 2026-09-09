@@ -61,7 +61,7 @@ def test_ticket_expiry_and_release_only_affect_monitor_lease(monkeypatch) -> Non
 def test_monitor_routes_cap_directory_and_protect_ticket_details() -> None:
     from app.main import app
 
-    cameras = [source(f"cam-{number}") for number in range(1, 7)]
+    cameras = [source(f"cam-{number}") for number in range(1, 19)]
     manager = MonitorManager(
         leases=FakeLeases(),
         source_lookup=lambda source_id: next((item for item in cameras if item.id == source_id), None),
@@ -74,14 +74,14 @@ def test_monitor_routes_cap_directory_and_protect_ticket_details() -> None:
         status = client.get("/api/v1/monitor/cameras/status?ids=cam-1,cam-2,cam-3,cam-4,cam-5")
 
     assert directory.status_code == 200
-    assert len(directory.json()["items"]) == 4
+    assert len(directory.json()["items"]) == 16
     assert missing.status_code == 404
     assert ticket.status_code == 200
     assert "private-source" not in ticket.text
     assert "https://media.example" not in ticket.text
     assert ticket.json()["cameras"][0]["webrtc"].startswith("/api/v1/media/")
     assert status.status_code == 200
-    assert len(status.json()["items"]) == 4
+    assert len(status.json()["items"]) == 5
 
 
 def test_camera_directory_excludes_disabled_sources_and_lists_enabled_work_areas() -> None:

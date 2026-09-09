@@ -7,8 +7,8 @@ import ManagedStreamPlayer from "@/components/managed-stream-player";
 import { consoleApi, type MonitorCamera, type MonitorPlaybackTicket, type StreamEvent, type StreamSession } from "@/lib/api";
 import type { Device } from "@/lib/types";
 
-const PAGE_SIZE = 4;
-const MAX_SELECTED_CAMERAS = 4;
+const PAGE_SIZE = 9;
+const MAX_SELECTED_CAMERAS = 16;
 
 export type MonitorPageApi = Pick<typeof consoleApi, "listMonitorCameras" | "createMonitorPlaybackTicket" | "releaseMonitorPlaybackTicket"> & Partial<Pick<typeof consoleApi, "monitorSnapshotUrl" | "listStreamSessions" | "startStreamSession" | "stopStreamSession" | "getStreamEvents">>;
 
@@ -272,7 +272,7 @@ export default function LiveMonitorPage({ api = consoleApi, devices = [] }: Prop
 
   return <div className="monitor-page">
     <div className="page-heading monitor-heading">
-      <div><span className="section-kicker">流媒体实时监看</span><h2>摄像头实时监控</h2><p>最多四路同屏；监看与 AI 分析独立启停，互不影响。</p></div>
+      <div><span className="section-kicker">流媒体实时监看</span><h2>摄像头实时监控</h2><p>主画面实时播放，其余所选摄像头以快照预览，可多选；监看与 AI 分析独立启停。</p></div>
       <div className="monitor-actions">
         <select aria-label="筛选工区" value={workArea} onChange={(event) => { setWorkArea(event.target.value); setOffset(0); }}>
           <option value="">全部工区</option>{areas.map((area) => <option key={area}>{area}</option>)}

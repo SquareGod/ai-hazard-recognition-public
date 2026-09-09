@@ -15,8 +15,20 @@ class HikvisionStore:
         with self._connect() as db:
             for item in channels:
                 no = int(item["channel_no"]); display_no = int(item.get("display_no") or no)
-                ident = f"hik-{profile_id[:8]}-{display_no}"; original = str(item.get("name") or f"IPCamera{display_no}")
-                db.execute("INSERT INTO channels(id,profile_id,channel_no,name,nvr_name,online,work_area) VALUES(?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET channel_no=excluded.channel_no,online=excluded.online,nvr_name=excluded.nvr_name", (ident, profile_id, no, original, original, int(bool(item.get("online"))), "未分配工区"))
+                original = str(item.get("name") or f"IPCamera{display_no}")
+                online = int(bool(item.get("online")))
+                # 以 (profile_id, channel_no) 为业务键：历史同步用过不同 id 方案
+                # （display_no/通道号混用），按 id 去重会为同一物理通道生成重复行。
+                row = db.execute(
+                    "SELECT id FROM channels WHERE profile_id=? AND channel_no=? ORDER BY enabled DESC, id LIMIT 1",
+                    (profile_id, no),
+                ).fetchone()
+                if row:
+                    # 保留用户改过的名称、工区与启用状态，只刷新在线标志与设备侧名称。
+                    db.execute("UPDATE channels SET online=?, nvr_name=? WHERE id=?", (online, original, row["id"]))
+                else:
+                    ident = f"hik-{profile_id[:8]}-{no}"
+                    db.execute("INSERT INTO channels(id,profile_id,channel_no,name,nvr_name,online,work_area) VALUES(?,?,?,?,?,?,?)", (ident, profile_id, no, original, original, online, "未分配工区"))
         return self.list()
     def list(self) -> list[dict[str, Any]]:
         with self._connect() as db: rows = db.execute("SELECT * FROM channels ORDER BY profile_id,channel_no").fetchall()
