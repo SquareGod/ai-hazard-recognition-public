@@ -526,7 +526,7 @@ function LivePage({ projectId, hazards, people, setHazards, openHazard, flash, n
   const [preview, setPreview] = useState<string>("/hazard-hoist.jpg");
   const [previewType, setPreviewType] = useState<"image" | "video">("image");
   const [filename, setFilename] = useState("尚未选择测试素材");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
   const [progressText, setProgressText] = useState("等待上传");
   const [backendState, setBackendState] = useState<"checking" | "ready" | "offline">("checking");
@@ -592,17 +592,26 @@ function LivePage({ projectId, hazards, people, setHazards, openHazard, flash, n
   }, [selectedAiStreamId]);
 
 
-  function chooseFile(file?: File) {
-    if (!file) return;
-    if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
-      flash("请选择图片或视频文件");
-      return;
+  function chooseFiles(list: FileList | null) {
+    if (!list || !list.length) return;
+    const incoming: File[] = [];
+    for (const file of Array.from(list)) {
+      if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) { flash(`跳过不支持的文件：${file.name}`); continue; }
+      if (selectedFiles.some((item) => item.name === file.name && item.size === file.size)) continue;
+      incoming.push(file);
     }
-    setPreview(URL.createObjectURL(file));
-    setPreviewType(file.type.startsWith("video/") ? "video" : "image");
-    setFilename(file.name);
-    setSelectedFile(file);
-    setProgressText("素材已就绪");
+    if (!incoming.length) return;
+    const next = [...selectedFiles, ...incoming].slice(0, 20);
+    setSelectedFiles(next);
+    const first = incoming[0];
+    setPreview(URL.createObjectURL(first));
+    setPreviewType(first.type.startsWith("video/") ? "video" : "image");
+    setFilename(next.length > 1 ? `${next.length} 个素材，最新：${first.name}` : first.name);
+    setProgressText(`已选择 ${next.length} 个素材，可继续追加或直接开始识别`);
+  }
+
+  function removeFile(index: number) {
+    setSelectedFiles((items) => items.filter((_, position) => position !== index));
   }
 
   async function openCamera() {
@@ -717,41 +726,52 @@ function LivePage({ projectId, hazards, people, setHazards, openHazard, flash, n
   }
 
   async function runRecognition() {
-    if (!selectedFile) { flash("请先选择图片或视频"); return; }
+    if (!selectedFiles.length) { flash("请先选择图片或视频"); return; }
     setAnalyzing(true);
     const taskProjectId = projectIdRef.current;
-    setProgressText("正在上传素材…");
+    const allCreated: Hazard[] = [];
+    let failedFiles = 0;
     try {
       const form = new FormData();
-      form.append("files", selectedFile);
+      for (const file of selectedFiles) form.append("files", file);
       form.append("mode", "test");
+      setProgressText(selectedFiles.length > 1 ? `正在上传 ${selectedFiles.length} 个素材…` : "正在上传素材…");
       const submitted = await consoleApi.uploadJobs(form, taskProjectId);
-      const job = submitted.jobs[0];
-      if (!job) throw new Error("后端未返回识别任务");
-      setProgressText("任务已提交，等待算法开始…");
-      await waitForJob(job.job_id, taskProjectId);
-      const result = await consoleApi.getJobResult(job.job_id, taskProjectId);
-      if (result.warnings?.some((warning) => warning.includes("失败"))) {
-        setProgressText("核验未完整完成：请检查模型服务后重试，不能据此判断没有隐患");
-        flash("部分模型请求失败。已有候选保留在任务记录中，本次不自动发送邮件。");
-        return;
+      const jobs = submitted.jobs;
+      if (!jobs.length) throw new Error("后端未返回识别任务");
+      for (let index = 0; index < jobs.length; index += 1) {
+        const job = jobs[index];
+        setProgressText(jobs.length > 1 ? `正在识别（${index + 1}/${jobs.length}）：${job.filename}` : "任务已提交，等待算法开始…");
+        try {
+          await waitForJob(job.job_id, taskProjectId);
+          const result = await consoleApi.getJobResult(job.job_id, taskProjectId);
+          if (result.warnings?.some((warning) => warning.includes("失败"))) {
+            failedFiles += 1;
+            flash(`${job.filename}：部分模型请求失败，候选已保留在任务记录中，本次不自动发送邮件`);
+            continue;
+          }
+          if (!result.findings.length) continue;
+          let dispatch: EmailDispatchResponse | undefined;
+          if (autoEmail && result.findings.some((item) => item.final_status === "confirmed_hazard")) {
+            setProgressText(`识别完成，正在为 ${job.filename} 发送邮件…`);
+            dispatch = await consoleApi.dispatchJobEmail(job.job_id, { work_area: DEMO_WORK_AREA }, taskProjectId);
+          }
+          allCreated.push(...result.findings.map((finding, findingIndex) => findingToHazard(finding, result, findingIndex, dispatch)));
+        } catch (jobError) {
+          failedFiles += 1;
+          flash(`${job.filename} 识别失败：${jobError instanceof Error ? jobError.message : "未知错误"}`);
+        }
       }
-      if (!result.findings.length) {
-        setProgressText("分析完成：未发现明确隐患");
-        flash("分析完成，当前素材未发现明确隐患");
-        return;
-      }
-      let dispatch: EmailDispatchResponse | undefined;
-      if (autoEmail && result.findings.some((item) => item.final_status === "confirmed_hazard")) {
-        setProgressText("识别完成，正在发送邮件…");
-        dispatch = await consoleApi.dispatchJobEmail(job.job_id, { work_area: DEMO_WORK_AREA }, taskProjectId);
-      }
-      const created = result.findings.map((finding, index) => findingToHazard(finding, result, index, dispatch));
       if (projectIdRef.current !== taskProjectId) { setProgressText("分析完成：结果保留在原项目中"); flash("项目已切换，识别结果未写入当前项目页面"); return; }
-      setHazards((items) => [...created, ...items]);
-      setProgressText(`完成：生成 ${created.length} 条隐患记录`);
-      openHazard(created[0].id);
-      flash(`识别完成，已生成 ${created.length} 条隐患${autoEmail ? "并执行邮件分发" : ""}`);
+      if (allCreated.length) {
+        setHazards((items) => [...allCreated, ...items]);
+        setProgressText(`完成：${jobs.length} 个素材共生成 ${allCreated.length} 条隐患记录`);
+        openHazard(allCreated[0].id);
+        flash(`识别完成：${jobs.length} 个素材，生成 ${allCreated.length} 条隐患${autoEmail ? "，确认隐患已邮件分发" : ""}${failedFiles ? `（${failedFiles} 个素材部分失败）` : ""}`);
+      } else {
+        setProgressText(failedFiles ? `完成：${failedFiles}/${jobs.length} 个素材处理失败，其余未发现明确隐患` : "分析完成：所选素材均未发现明确隐患");
+        flash(failedFiles ? "部分素材识别失败，详见提示" : "所选素材均未发现明确隐患");
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "识别失败";
       setProgressText(`失败：${message}`);
@@ -773,9 +793,10 @@ function LivePage({ projectId, hazards, people, setHazards, openHazard, flash, n
     <details className="surface media-lab test-lab" open={testOpen} onToggle={(event) => setTestOpen((event.target as HTMLDetailsElement).open)}>
       <summary><span><Radio size={15}/>测试识别</span><small>上传图片、视频或调用电脑摄像头进行一次性全链路测试</small></summary>
     <section>
-      <div className="media-toolbar"><div><span className="live-signal"><Radio size={14}/>真实算法测试入口</span><p>上传现场图片或视频，调用 8010 后端完成真实识别与邮件分发。</p></div><div className="media-actions"><span className={`backend-pill ${backendState}`}>{backendState === "ready" ? "后端已连接" : backendState === "checking" ? "正在检查后端" : "后端未连接"}</span><label className="secondary-action file-button"><Upload size={16}/>上传图片/视频<input type="file" accept="image/*,video/*" onChange={(e) => chooseFile(e.target.files?.[0])}/></label><button className="secondary-action" onClick={openCamera}><Camera size={16}/>电脑摄像头</button></div></div>
+      <div className="media-toolbar"><div><span className="live-signal"><Radio size={14}/>真实算法测试入口</span><p>上传现场图片或视频（支持一次多选，最多20个），调用 8010 后端完成真实识别与邮件分发。</p></div><div className="media-actions"><span className={`backend-pill ${backendState}`}>{backendState === "ready" ? "后端已连接" : backendState === "checking" ? "正在检查后端" : "后端未连接"}</span><label className="secondary-action file-button"><Upload size={16}/>上传图片/视频（可多选）<input type="file" accept="image/*,video/*" multiple onChange={(e) => { chooseFiles(e.target.files); e.target.value = ""; }}/></label><button className="secondary-action" onClick={openCamera}><Camera size={16}/>电脑摄像头</button></div></div>
+      {selectedFiles.length > 0 && <div className="upload-file-list" aria-label="已选素材清单">{selectedFiles.map((file, index) => <span key={`${file.name}-${file.size}-${index}`} className="upload-file-chip"><b>{file.name}</b><small>{(file.size / 1024 / 1024).toFixed(1)} MB</small>{!analyzing && <button onClick={() => removeFile(index)} aria-label={`移除 ${file.name}`}>×</button>}</span>)}</div>}
       <div className="media-stage">{previewType === "video" ? <video src={preview} controls playsInline aria-label="待分析视频"/> : <img src={preview} alt="待分析素材"/>}<div className="media-overlay"><span>{filename}</span><small>{progressText}</small></div><div className="scan-frame"><i/><i/><i/><i/></div>{analyzing && <div className="analyzing-layer"><span className="scanner"/><b>正在提取画面证据并匹配隐患标签…</b><small>{progressText}</small></div>}</div>
-      <div className="analysis-controls"><div><label>隐患等级</label><div className="auto-level-note"><ShieldCheck size={16}/><span>由视觉模型在“一般隐患 / 重大隐患”中自动判断；实时默认 {algorithmSettings.realtime_fps} FPS</span></div><label className="email-toggle"><input type="checkbox" checked={autoEmail} onChange={(event) => setAutoEmail(event.target.checked)}/>识别后按自动等级发送邮件</label>{algorithmCapabilities && <small className="algorithm-capability">算法能力配置已加载</small>}</div><button className="primary-action analyze-button" onClick={runRecognition} disabled={analyzing || !selectedFile || backendState !== "ready"}><ScanLine size={18}/>{analyzing ? "真实分析中…" : "开始真实识别"}</button></div>
+      <div className="analysis-controls"><div><label>隐患等级</label><div className="auto-level-note"><ShieldCheck size={16}/><span>由视觉模型在“一般隐患 / 重大隐患”中自动判断；实时默认 {algorithmSettings.realtime_fps} FPS</span></div><label className="email-toggle"><input type="checkbox" checked={autoEmail} onChange={(event) => setAutoEmail(event.target.checked)}/>识别后按自动等级发送邮件</label>{algorithmCapabilities && <small className="algorithm-capability">算法能力配置已加载</small>}</div><button className="primary-action analyze-button" onClick={runRecognition} disabled={analyzing || !selectedFiles.length || backendState !== "ready"}><ScanLine size={18}/>{analyzing ? "真实分析中…" : selectedFiles.length > 1 ? `开始真实识别（${selectedFiles.length} 个素材）` : "开始真实识别"}</button></div>
       <div className="stream-reservation stream-navigation"><div><span className="section-kicker">摄像头与 AI 任务</span><h3>视频源配置和实时 AI 已集中管理</h3><p>为保护现场账号，RTSP 地址不再在识别上传页填写。请在设备监控添加视频源，在实时监控中启动、停止和查看 AI 最新发现。</p></div><div><button className="secondary-action" onClick={() => navigate("devices")}><Cctv size={16}/>管理设备</button><button className="primary-action" onClick={() => navigate("monitor")}><Video size={16}/>进入实时监控</button></div></div>
     </section>
     </details>

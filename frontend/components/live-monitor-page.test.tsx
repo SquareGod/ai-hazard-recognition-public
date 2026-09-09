@@ -12,7 +12,7 @@ vi.mock("@/components/managed-stream-player", () => ({
   ),
 }));
 
-const cameras = Array.from({ length: 5 }, (_, index) => ({
+const cameras = Array.from({ length: 10 }, (_, index) => ({
   id: `cam-${index + 1}`,
   name: `摄像头 ${index + 1}`,
   work_area: "A1工区",
@@ -39,7 +39,7 @@ function api(expiresIn = 300): MonitorPageApi {
 }
 
 describe("LiveMonitorPage", () => {
-  it("每组选择至多四路，但只让第一路保持实时播放", async () => {
+  it("每组选择至多九路，但只让第一路保持实时播放", async () => {
     const monitorApi = api();
     render(<LiveMonitorPage api={monitorApi} devices={[]} />);
 
@@ -48,7 +48,7 @@ describe("LiveMonitorPage", () => {
     expect(screen.getByRole("button", { name: "切换 摄像头 2 为主画面" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "下一组" }));
     await waitFor(() => expect(screen.getAllByTestId("monitor-player")).toHaveLength(1));
-    expect(screen.getByTestId("monitor-player")).toHaveTextContent("摄像头 5");
+    expect(screen.getByTestId("monitor-player")).toHaveTextContent("摄像头 10");
   });
 
   it("点击主画面放大并关闭后返回单路主画面", async () => {
@@ -67,12 +67,12 @@ describe("LiveMonitorPage", () => {
     expect(await screen.findByRole("option", { name: "A1工区" })).toBeInTheDocument();
   });
 
-  it("可任意选择最多四路，应用选择后只为主画面创建播放票据", async () => {
+  it("可任意选择多路，应用选择后只为主画面创建播放票据", async () => {
     const monitorApi = api();
     render(<LiveMonitorPage api={monitorApi} devices={[]} />);
     await waitFor(() => expect(monitorApi.createMonitorPlaybackTicket).toHaveBeenCalledTimes(1));
 
-    fireEvent.click(await screen.findByRole("checkbox", { name: /摄像头 1/ }));
+    fireEvent.click(await screen.findByRole("checkbox", { name: "摄像头 1" }));
     fireEvent.click(screen.getByRole("checkbox", { name: /摄像头 5/ }));
     expect(monitorApi.createMonitorPlaybackTicket).toHaveBeenCalledTimes(1);
 
