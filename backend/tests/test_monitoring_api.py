@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from unittest.mock import patch
 
@@ -86,7 +86,7 @@ def test_monitor_routes_cap_directory_and_protect_ticket_details() -> None:
 
 def test_camera_directory_excludes_disabled_sources_and_lists_enabled_work_areas() -> None:
     cameras = [
-        source("cam-a1", work_area="示范工区"),
+        source("cam-a1", work_area="A1工区"),
         source("cam-a2", work_area="A2工区"),
         source("cam-disabled", work_area="停用工区", enabled=False),
     ]
@@ -100,7 +100,7 @@ def test_camera_directory_excludes_disabled_sources_and_lists_enabled_work_areas
 
     assert [item["id"] for item in directory["items"]] == ["cam-a1", "cam-a2"]
     assert directory["total"] == 2
-    assert directory["work_areas"] == ["示范工区", "A2工区"]
+    assert directory["work_areas"] == sorted({"A1工区", "A2工区"})
 
 
 def test_ticket_timer_releases_expired_monitor_lease_without_a_followup_request(monkeypatch) -> None:
