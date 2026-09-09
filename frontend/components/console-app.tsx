@@ -66,7 +66,7 @@ const navItems: Array<{ key: PageKey; label: string; hint: string; icon: typeof 
   { key: "reports", label: "统计与导出", hint: "台账与闭环材料", icon: ChartNoAxesCombined },
 ];
 
-const statusOrder: HazardStatus[] = ["待核实", "待整改", "整改中", "待复核", "复核退回", "待重大确认", "已闭合", "误报/已作废"];
+const statusOrder: HazardStatus[] = ["待核实", "待整改", "整改中", "待复核", "复核退回", "待重大确认", "已闭合", "已误报", "误报/已作废"];
 
 function nowText() {
   return new Intl.DateTimeFormat("zh-CN", {
@@ -144,7 +144,7 @@ function groupHazards(hazards: Hazard[]): ViewHazardGroup[] {
   }
   return [...groups.values()].map((group) => {
     const statuses = new Set(group.hazards.map((item) => item.status));
-    const status: HazardStatus = group.hazards.every((item) => ["已闭合", "误报/已作废"].includes(item.status)) ? "已闭合" : statuses.has("待核实") ? "待核实" : statuses.has("待复核") || statuses.has("待重大确认") ? "待复核" : "整改中";
+    const status: HazardStatus = group.hazards.every((item) => ["已闭合", "已误报", "误报/已作废"].includes(item.status)) ? "已闭合" : statuses.has("待核实") ? "待核实" : statuses.has("待复核") || statuses.has("待重大确认") ? "待复核" : "整改中";
     return { ...group, status };
   });
 }
@@ -454,7 +454,7 @@ export default function ConsoleApp({ currentUser, onLogout }: { currentUser?: Sy
           {monitorVisited && <div className="persistent-monitor-page" hidden={page !== "monitor"}><LiveMonitorPage key={selectedProjectId} devices={initialDevices} /></div>}
           {page === "dispatch" && <DispatchPage hazards={hazards} openHazard={setSelectedHazardId} flash={flash} />}
           {page === "ledger" && <LedgerPage hazards={hazards} openHazard={setSelectedHazardId} flash={flash} />}
-          {page === "rectification" && <RectificationPage hazards={hazards} currentUser={currentUser} openHazard={setSelectedHazardId} submitRectification={submitRectification} reviewHazard={reviewHazard} confirmMajor={confirmMajor} />}
+          {page === "rectification" && <RectificationPage hazards={hazards} currentUser={currentUser} openHazard={setSelectedHazardId} submitRectification={submitRectification} reviewHazard={reviewHazard} confirmMajor={confirmMajor} onUndoMisreport={(hazardId) => { void consoleApi.undoFalsePositive(hazardId).then(() => setHazards((items) => items.map((item) => item.id === hazardId ? { ...item, status: "待核实" } : item))).catch(() => flash("撤销失败，请稍后重试")); }} />}
           {page === "people" && (currentUser ? <AccountManagementPage currentUser={currentUser} flash={flash}/> : <PeoplePage people={people} setPeople={setPeople} openAdd={() => setPersonDialog(true)} flash={flash} />)}
           {page === "devices" && <DevicesPage flash={flash} navigate={setPage} />}
           {page === "reports" && <ReportsPage hazards={hazards} openHazard={setSelectedHazardId} flash={flash} />}
@@ -481,7 +481,7 @@ export default function ConsoleApp({ currentUser, onLogout }: { currentUser?: Sy
 
 function OverviewPage({ hazards, openHazard, navigate }: { hazards: Hazard[]; openHazard: (id: string) => void; navigate: (page: PageKey) => void }) {
   const groups = groupHazards(hazards);
-  const active = hazards.filter((hazard) => !["已闭合", "误报/已作废"].includes(hazard.status));
+  const active = hazards.filter((hazard) => !["已闭合", "已误报", "误报/已作废"].includes(hazard.status));
   const closed = hazards.filter((hazard) => hazard.status === "已闭合").length;
   const metrics: Array<{ label: string; value: string | number; hint: string; icon: LucideIcon; tone: string }> = [
     { label: "今日AI发现", value: hazards.length, hint: "已自动生成整改单", icon: ScanLine, tone: "blue" },
@@ -879,7 +879,10 @@ function LedgerPage({ hazards, openHazard, flash }: { hazards: Hazard[]; openHaz
 }
 
 function RectificationPage({ hazards, currentUser, openHazard, submitRectification, reviewHazard, confirmMajor }: { hazards: Hazard[]; currentUser?: SystemUser; openHazard: (id: string) => void; submitRectification: (id: string, description: string, afterImage?: string) => void; reviewHazard: (id: string, passed: boolean) => void; confirmMajor: (id: string) => void }) {
-  const groups = groupHazards(hazards).filter((group) => group.hazards.some((item) => item.status !== "误报/已作废"));
+  const [taskTab, setTaskTab] = useState<"全部" | "待整改" | "待复核" | "待确认" | "已误报">("全部");
+  const allGroups = groupHazards(hazards);
+  const groups = allGroups.filter((group) => group.hazards.some((item) => !["已误报", "误报/已作废"].includes(item.status)));
+  const misreportGroups = allGroups.filter((group) => group.hazards.some((item) => ["已误报", "误报/已作废"].includes(item.status)));
   const [active, setActive] = useState(hazards.find((hazard) => ["待整改", "复核退回"].includes(hazard.status))?.id ?? hazards[0]?.id);
   const [description, setDescription] = useState("");
   const [afterImage, setAfterImage] = useState<string>("");
@@ -894,9 +897,14 @@ function RectificationPage({ hazards, currentUser, openHazard, submitRectificati
 
   return <div className="rectification-layout">
     <section className="surface task-rail">
-      <SectionTitle kicker="我的待办" title="整改与复核任务" action={<span className="count-badge">{hazards.filter((h) => !["已闭合", "误报/已作废"].includes(h.status)).length} 项</span>} />
-      <div className="task-filter"><button className="active">全部</button><button>待整改</button><button>待复核</button><button>待确认</button></div>
-      <div className="task-list grouped-tasks">{groups.map((group) => <article key={group.id} className={current?.groupId === group.id ? "active" : ""}><img src={group.beforeImage} alt="隐患组证据"/><div><strong>{group.orderId}</strong><small>{group.workArea} · {group.hazards.length}项隐患</small>{group.hazards.filter((item) => item.status !== "误报/已作废").map((hazard) => <button key={hazard.id} className={current?.id === hazard.id ? "active" : ""} onClick={() => setActive(hazard.id)}><span className="task-item-title">{hazard.title}</span><span className="task-item-badges"><LevelBadge level={hazard.level}/><StatusBadge status={hazard.status}/></span></button>)}</div></article>)}</div>
+      <SectionTitle kicker="我的待办" title="整改与复核任务" action={<span className="count-badge">{hazards.filter((h) => !["已闭合", "已误报", "误报/已作废"].includes(h.status)).length} 项</span>} />
+      <div className="task-filter">{([["全部","全部"],["待整改","待整改"],["待复核","待复核"],["待确认","待确认"],["已误报","已误报"]] as const).map(([key, label]) => <button key={key} className={taskTab === key ? "active" : ""} onClick={() => setTaskTab(key as typeof taskTab)}>{label}</button>)}</div>
+      <div className="task-list grouped-tasks">{(taskTab === "已误报" ? misreportGroups : groups.filter((group) => {
+        if (taskTab === "待整改") return group.hazards.some((item) => ["待整改", "整改中", "复核退回"].includes(item.status));
+        if (taskTab === "待复核") return group.hazards.some((item) => item.status === "待复核");
+        if (taskTab === "待确认") return group.hazards.some((item) => item.status === "待重大确认");
+        return true;
+      })).map((group) => <article key={group.id} className={current?.groupId === group.id ? "active" : ""}><img src={group.beforeImage} alt="隐患组证据"/><div><strong>{group.orderId}</strong><small>{group.workArea} · {group.hazards.length}项隐患</small>{group.hazards.filter((item) => taskTab === "已误报" ? true : !["已误报", "误报/已作废"].includes(item.status)).map((hazard) => taskTab === "已误报" ? <span key={hazard.id} className="misreport-undo-row"><span className="task-item-title">{hazard.title}</span><button className="text-action" onClick={() => onUndoMisreport(hazard.id)}>撤销误报</button></span> : <button key={hazard.id} className={current?.id === hazard.id ? "active" : ""} onClick={() => setActive(hazard.id)}><span className="task-item-title">{hazard.title}</span><span className="task-item-badges"><LevelBadge level={hazard.level}/><StatusBadge status={hazard.status}/></span></button>)}</div></article>)}</div>
     </section>
 
     {current && <section className="surface rectification-workbench">

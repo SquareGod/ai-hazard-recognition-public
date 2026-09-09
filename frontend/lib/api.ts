@@ -108,6 +108,7 @@ export const consoleApi = {
   getHazard: (hazardId: string) => request(`/hazards/${hazardId}`),
   verifyHazard: (hazardId: string, payload: unknown) => request<BackendHazard>(`/hazards/${hazardId}/verify`, { method: "POST", body: JSON.stringify(payload) }),
   markFalsePositive: (hazardId: string, payload: unknown) => request<BackendHazard>(`/hazards/${hazardId}/mark-false-positive`, { method: "POST", body: JSON.stringify(payload) }),
+  undoFalsePositive: (hazardId: string) => request<BackendHazard>(`/hazards/${hazardId}/undo-false-positive`, { method: "POST" }),
   submitRectification: (hazardId: string, payload: RectificationSubmitPayload) => request<BackendHazard>(`/hazards/${hazardId}/rectifications`, { method: "POST", body: JSON.stringify(payload) }),
   uploadRectificationEvidence: (hazardId: string, payload: FormData) => request<{ url: string }>(`/hazards/${hazardId}/rectification-evidence`, { method: "POST", body: payload }),
   reviewHazard: (hazardId: string, payload: HazardReviewPayload) => request<BackendHazard>(`/hazards/${hazardId}/reviews`, { method: "POST", body: JSON.stringify(payload) }),

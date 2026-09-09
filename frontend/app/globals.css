@@ -207,7 +207,7 @@ img { display: block; }
 .level-badge, .status-badge, .source-badge, .overdue-chip { display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; border-radius: 14px; font-size: 11px; font-weight: 700; }
 .level-badge { padding: 5px 8px; }.level-badge.normal { color: #b16a08; background: var(--orange-soft); }.level-badge.major { color: #c93850; background: var(--red-soft); }
 .status-badge { padding: 5px 8px; color: #536d8d; background: #eef3f8; }
-.status-待核实 { color: #2d6fca; background: #eaf2ff; }.status-待整改, .status-复核退回 { color: #b7700f; background: #fff3df; }.status-整改中 { color: #6c4fc3; background: #f0ebff; }.status-待复核, .status-待重大确认 { color: #158596; background: #e5f7f9; }.status-已闭合 { color: #16895b; background: #e7f8f0; }.status-误报-已作废 { color: #738095; background: #eef1f5; }
+.status-待核实 { color: #2d6fca; background: #eaf2ff; }.status-待整改, .status-复核退回 { color: #b7700f; background: #fff3df; }.status-整改中 { color: #6c4fc3; background: #f0ebff; }.status-待复核, .status-待重大确认 { color: #158596; background: #e5f7f9; }.status-已闭合 { color: #16895b; background: #e7f8f0; }.status-误报-已作废 { color: #738095; background: #eef1f5; }.status-已误报 { color: #738095; background: #eef1f5; }
 .source-badge { padding: 5px 8px; color: #5b6f88; background: #f0f3f7; }
 .overdue-chip { margin-top: 4px; padding: 4px 7px; color: var(--red); background: var(--red-soft); }
 
@@ -427,6 +427,9 @@ body { font-size: 16px; }
 .ai-state.idle { color: #64758b; background: #edf2f7; }.ai-state.error { color: #bd3d53; background: #fff0f3; }
 .camera-state.reconnecting { color: #aa680c; background: #fff3df; }
 .camera-state.offline, .camera-state.unauthorized, .camera-state.codec_unsupported { color: #bd3d53; background: #fff0f3; }
+.misreport-undo-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 9px; border: 1px dashed #d8e4f0; border-radius: 8px; background: #f8fafd; }
+.misreport-undo-row .task-item-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: #5d7391; }
+.misreport-undo-row button { flex: none; min-height: 26px; padding: 3px 9px; font-size: 11px; }
 .monitor-diagnostics-inline { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #5d7391; font-size: 12px; }
 .monitor-card-meta { flex: none; padding: 7px 12px; color: #6d7f95; background: #f8fafd; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; }
 .monitor-diagnostics { flex: none; padding: 8px 12px; border-top: 1px solid #e8eef5; color: #60748d; background: #f8fbff; display: flex; flex-wrap: wrap; gap: 5px 13px; font-size: 12px; }

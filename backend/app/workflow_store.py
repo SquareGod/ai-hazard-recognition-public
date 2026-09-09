@@ -202,6 +202,23 @@ class WorkflowStore:
         with self._connect() as db: rows = db.execute("SELECT * FROM hazards ORDER BY created_at DESC").fetchall()
         return [self._hydrate(dict(row)) for row in rows]
 
+    def undo_false_positive(self, hazard_id: str, operator: str = "系统") -> dict[str, Any] | None:
+        """撤销误报标记：已误报/误报已作废 → 待核实，隐患重新进入整改闭环。"""
+        with self._connect() as db:
+            item = db.execute("SELECT * FROM hazards WHERE id=?", (hazard_id,)).fetchone()
+            if item is None:
+                raise HTTPException(404, "隐患不存在")
+            if item["status"] not in ("已误报", "误报/已作废"):
+                raise HTTPException(422, "仅误报状态的隐患可以撤销")
+            now = now_iso()
+            before = {"name": item["name"], "status": item["status"], "false_positive_reason": item["false_positive_reason"], "version": item["version"]}
+            after = {"name": item["name"], "status": "待核实", "version": int(item["version"] or 1) + 1}
+            db.execute("UPDATE hazards SET status='待核实',false_positive_reason=NULL,updated_at=?,version=version+1 WHERE id=?", (now, hazard_id))
+            self._insert_audit(db, hazard_id, "undo_false_positive", None, operator, before, after, now)
+            if item["group_id"]:
+                db.execute("UPDATE hazard_groups SET updated_at=? WHERE id=?", (now, item["group_id"]))
+        return self.get(hazard_id)
+
     def submit_rectification(self, hazard_id: str, description: str, submitted_by: str, after_image: str | None) -> dict[str, Any] | None:
         ident, now = f"RC-{uuid.uuid4().hex[:12]}", now_iso()
         with self._connect() as db:

@@ -950,6 +950,13 @@ def verify_persistent_hazard(hazard_id: str, request: HazardVerificationRequest,
 def mark_false_positive(hazard_id: str, request: HazardVerificationRequest, http_request: Request) -> dict:
     return verify_persistent_hazard(hazard_id, request.model_copy(update={"passed": False}), http_request)
 
+@app.post("/api/v1/hazards/{hazard_id}/undo-false-positive")
+def undo_hazard_false_positive(hazard_id: str, request: Request) -> dict:
+    """撤销误报标记：恢复待核实，重新进入整改闭环（用于误点纠正）。"""
+    require_session(request, csrf=True)
+    item = get_persistent_hazard(hazard_id)
+    return workflow_store.undo_false_positive(item["id"])
+
 
 @app.post("/api/v1/hazards/{hazard_id}/reviews")
 def review_persistent_hazard(hazard_id: str, request: HazardReviewRequest, http_request: Request) -> dict:

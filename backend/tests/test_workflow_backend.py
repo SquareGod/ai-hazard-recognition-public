@@ -99,5 +99,32 @@ class WorkflowBackendTests(unittest.TestCase):
         self.assertEqual("已闭合", hazards.json()[0]["status"])
 
 
+    def test_false_positive_can_be_undone_and_returns_to_pending(self) -> None:
+        findings = [self.finding()]
+        created = self.store.create_from_findings(
+            job_id="job-undo",
+            work_area="示范工区",
+            findings=findings,
+            source_key_prefix="stream:s-9:frame-1",
+        )
+        hazard_id = created[0]["id"]
+
+        # 核实为误报
+        marked = self.store.verify(hazard_id, "安全员", passed=False, reason="误点测试")
+        self.assertEqual("已误报", marked["status"])
+
+        # 撤销误报 → 恢复待核实
+        restored = self.store.undo_false_positive(hazard_id, operator="系统")
+        self.assertEqual("待核实", restored["status"])
+        self.assertIsNone(restored["false_positive_reason"])
+
+        # 非误报状态不能再撤销
+        with self.assertRaises(Exception):
+            self.store.undo_false_positive(hazard_id, "系统")
+        # 恢复后可正常进入整改
+        result = self.store.submit_rectification(hazard_id, "已整改", "张安全", None)
+        self.assertEqual("待复核", result["status"])
+
+
 if __name__ == "__main__":
     unittest.main()

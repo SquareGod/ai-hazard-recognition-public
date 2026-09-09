@@ -18,6 +18,7 @@ export type HazardStatus =
   | "复核退回"
   | "待重大确认"
   | "已闭合"
+  | "已误报"
   | "误报/已作废";
 
 export type PersonRole = "安全员" | "工区负责人" | "项目经理" | "安全总监";
