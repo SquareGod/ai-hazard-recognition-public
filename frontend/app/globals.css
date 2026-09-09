@@ -408,13 +408,13 @@ body { font-size: 16px; }
 /* 实时监控中心：2×2视口自适应四宫格，顶部仅保留一条工具栏，100%缩放四路同屏不滚动。 */
 .monitor-page { display: flex; flex-direction: column; gap: 12px; }
 .monitor-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
-.monitor-heading h2 { margin: 3px 0; font-size: 22px; }
+.monitor-heading h2 { margin: 1px 0; font-size: 18px; }
 .monitor-heading p { margin: 0; color: var(--muted); line-height: 1.55; }
 .monitor-actions { display: flex; align-items: center; gap: 9px; }
 .monitor-actions select { min-width: 150px; height: 38px; padding: 0 35px 0 12px; border: 1px solid var(--line); border-radius: 10px; color: #40546e; background: #fff; }
 .ghost-action, .monitor-pagination button { min-height: 38px; padding: 8px 13px; border: 1px solid #cfdaea; border-radius: 10px; color: #49617f; background: #fff; display: inline-flex; align-items: center; justify-content: center; gap: 7px; font-weight: 700; }
 .ghost-action:hover, .monitor-pagination button:hover:not(:disabled) { color: var(--blue); border-color: #9cbbea; background: #f7faff; }
-.monitor-wall { height: calc(100dvh - 258px); min-height: 500px; padding: 12px; border: 1px solid #d9e5f1; border-radius: 18px; background: linear-gradient(160deg,#f3f5f8,#edf0f4); display: grid; grid-template-columns: minmax(0, 1fr) clamp(230px, 19vw, 300px); gap: 12px; box-shadow: var(--shadow); }
+.monitor-wall { height: calc(100dvh - 230px); min-height: 500px; padding: 12px; border: 1px solid #d9e5f1; border-radius: 18px; background: linear-gradient(160deg,#f3f5f8,#edf0f4); display: grid; grid-template-columns: minmax(0, 1fr) clamp(230px, 19vw, 300px); gap: 12px; box-shadow: var(--shadow); }
 .monitor-wall:fullscreen { height: 100vh; padding: 16px; border-radius: 0; background: #0d1a2b; }
 .monitor-camera-card, .monitor-primary-card { min-width: 0; min-height: 0; overflow: hidden; border: 1px solid #d6e1ed; border-radius: 15px; background: #fff; box-shadow: 0 8px 22px rgba(28, 62, 105, .07); display: flex; flex-direction: column; }
 .monitor-card-title { flex: none; min-height: 46px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -427,6 +427,7 @@ body { font-size: 16px; }
 .ai-state.idle { color: #64758b; background: #edf2f7; }.ai-state.error { color: #bd3d53; background: #fff0f3; }
 .camera-state.reconnecting { color: #aa680c; background: #fff3df; }
 .camera-state.offline, .camera-state.unauthorized, .camera-state.codec_unsupported { color: #bd3d53; background: #fff0f3; }
+.monitor-diagnostics-inline { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #5d7391; font-size: 12px; }
 .monitor-card-meta { flex: none; padding: 7px 12px; color: #6d7f95; background: #f8fafd; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; }
 .monitor-diagnostics { flex: none; padding: 8px 12px; border-top: 1px solid #e8eef5; color: #60748d; background: #f8fbff; display: flex; flex-wrap: wrap; gap: 5px 13px; font-size: 12px; }
 .monitor-diagnostics span { min-width: 0; }

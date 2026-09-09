@@ -33,8 +33,8 @@ function AiBadge({ session }: { session?: StreamSession }) {
 }
 
 function MonitorDiagnostics({ session, fallback }: { session?: StreamSession; fallback?: string }) {
-  if (!session) return <div className="monitor-diagnostics"><span>视频取流：未启动 AI</span><span>最后在线：{fallback || "等待首帧"}</span><span>启动 AI 后显示抽帧、推理和建单状态</span></div>;
-  return <div className="monitor-diagnostics"><span>取流：{session.connection_status === "connected" ? "正常" : session.connection_status || "连接中"} · 首帧 {timeText(session.last_frame_at)}</span><span>推理：{timeText(session.last_inference_at)} · {session.processed_frames || 0} 帧 · {session.actual_fps?.toFixed(1) || "0.0"} FPS</span><span>事件：{session.emitted_events || 0} · 已建单 {session.orders_created || 0} · 最近 {timeText(session.last_event_at)}</span><span>模型：{session.model_name || "加载中"}{session.last_error ? ` · ${session.last_error}` : ""}</span></div>;
+  if (!session) return <span className="monitor-diagnostics-inline">视频取流：未启动 AI · 最后在线：{fallback || "等待首帧"} · 启动 AI 后显示抽帧、推理和建单状态</span>;
+  return <span className="monitor-diagnostics-inline">取流：{session.connection_status === "connected" ? "正常" : session.connection_status || "连接中"} · 最后在线 {timeText(session.last_frame_at)} · 推理 {timeText(session.last_inference_at)} · {session.processed_frames || 0} 帧 · {session.actual_fps?.toFixed(1) || "0.0"} FPS · 事件 {session.emitted_events || 0} · 已建单 {session.orders_created || 0}{session.last_error ? ` · ${session.last_error}` : ""}</span>;
 }
 
 function MonitorSnapshot({ camera, src, onSelect, session }: { camera: MonitorCamera; src: () => string; onSelect: () => void; session?: StreamSession }) {
@@ -314,8 +314,7 @@ export default function LiveMonitorPage({ api = consoleApi, devices = [] }: Prop
       {!loading && !error && primaryCamera && <article className="monitor-primary-card">
         <div className="monitor-card-title"><div><strong>{primaryCamera.name}</strong><span>{primaryCamera.work_area} · {primaryDevice?.point || "未配置点位"}</span></div><AiBadge session={sessions.find((item) => item.source_id === primaryCamera.id)} /></div>
         {primary ? <ManagedStreamPlayer camera={{ id: primary.id, name: primary.name, webrtcUrl: primary.webrtc, hlsUrl: primary.hls }} onEnlarge={() => setEnlargedId(primary.id)} /> : <div className="managed-video-stage monitor-switching-stage">{api.monitorSnapshotUrl && <img src={api.monitorSnapshotUrl(primaryCamera.id)} alt={`${primaryCamera.name}切换中画面`} />}<div className="player-state offline"><span>正在连接 {primaryCamera.name} 实时画面…</span></div></div>}
-        <MonitorDiagnostics session={sessions.find((item) => item.source_id === primaryCamera.id)} fallback={primaryDevice?.lastSeen} />
-        <div className="monitor-card-meta"><span>主画面保持实时播放；切换摄像头不会启动第二条 NVR 上游流。</span><button className={sessions.some((item) => item.source_id === primaryCamera.id) ? "danger-outline" : "secondary-action"} disabled={changingAi === primaryCamera.id} onClick={() => void toggleAi(primaryCamera.id)}>{sessions.some((item) => item.source_id === primaryCamera.id) ? "停止 AI" : "启动 AI"}</button></div>
+        <div className="monitor-card-meta"><MonitorDiagnostics session={sessions.find((item) => item.source_id === primaryCamera.id)} fallback={primaryDevice?.lastSeen} /><button className={sessions.some((item) => item.source_id === primaryCamera.id) ? "danger-outline" : "secondary-action"} disabled={changingAi === primaryCamera.id} onClick={() => void toggleAi(primaryCamera.id)}>{sessions.some((item) => item.source_id === primaryCamera.id) ? "停止 AI" : "启动 AI"}</button></div>
       </article>}
       {!loading && !error && activeCameras.filter((camera) => camera.id !== primaryId).length > 0 && <aside className="monitor-preview-rail" aria-label="辅助摄像头预览">
         {activeCameras.filter((camera) => camera.id !== primaryId).map((camera) => <MonitorSnapshot key={camera.id} camera={camera} src={() => api.monitorSnapshotUrl?.(camera.id) || ""} onSelect={() => setPrimaryCameraId(camera.id)} session={sessions.find((item) => item.source_id === camera.id)} />)}
